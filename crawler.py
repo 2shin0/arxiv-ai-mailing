@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 
 ARXIV_URL = "https://arxiv.org/list/cs.AI/recent"
@@ -13,6 +13,7 @@ def fetch_recent_ai_papers():
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
+    print("[INFO] Successfully parsed HTML content.")
 
     # 어제 날짜 (UTC 기준)
     yesterday = datetime.now(timezone.utc) - timedelta(days=1)
@@ -21,25 +22,27 @@ def fetch_recent_ai_papers():
     papers = []
     total_checked = 0
 
-    for dt, dd in zip(soup.find_all('dt'), soup.find_all('dd')):
-        id_tag = dt.find('span', class_='list-identifier')
-        a_tag = None
-        if id_tag:
-            for a in id_tag.find_all('a'):
-                if a.get('title') == 'Abstract':
-                    a_tag = a
-                    break
-
+    for i, (dt, dd) in enumerate(zip(soup.find_all('dt'), soup.find_all('dd'))):
+        print(f"[STEP] Processing entry {i+1}")
+        a_tag = dt.find('a', href=re.compile(r"^/abs/"))
         if not a_tag:
             print("[WARN] Skipping entry without valid abstract link.")
             continue
 
         abstract_url = "https://arxiv.org" + a_tag['href']
+        print(f"[INFO] Abstract URL: {abstract_url}")
 
-        title = dd.find('div', class_='list-title').text.replace("Title:", "").strip()
-        authors = dd.find('div', class_='list-authors').text.replace("Authors:", "").strip()
+        title_tag = dd.find('div', class_='list-title')
+        authors_tag = dd.find('div', class_='list-authors')
+        if not title_tag or not authors_tag:
+            print("[WARN] Missing title or authors.")
+            continue
+
+        title = title_tag.text.replace("Title:", "").strip()
+        authors = authors_tag.text.replace("Authors:", "").strip()
 
         try:
+            print(f"[INFO] Fetching abstract page for: {title}")
             abs_response = requests.get(abstract_url)
             if abs_response.status_code != 200:
                 print(f"[ERROR] Failed to fetch abstract page for {title}. Status: {abs_response.status_code}")
@@ -55,15 +58,22 @@ def fetch_recent_ai_papers():
             print(f"[DEBUG] {title} | {submitted_text}")
 
             try:
-                submitted_date = submitted_text.replace('Submitted on ', '').strip()
-                submitted_dt = datetime.strptime(submitted_date, '%d %b %Y')
+                submitted_text = submitted_text.strip('[]').replace('Submitted on ', '').strip()
+                submitted_dt = datetime.strptime(submitted_text, '%d %b %Y')
+                print(f"[DEBUG] Parsed date: {submitted_dt.date()} vs {yesterday.date()}")
                 if submitted_dt.date() != yesterday.date():
+                    print(f"[INFO] Skipping {title}, not submitted yesterday.")
                     continue
             except Exception as e:
                 print(f"[WARN] Failed to parse date for {title}: {e}")
                 continue
 
-            abstract = abs_soup.find('blockquote', class_='abstract').text.replace("Abstract:", "").strip()
+            abstract_tag = abs_soup.find('blockquote', class_='abstract')
+            if not abstract_tag:
+                print(f"[WARN] No abstract block found for: {title}")
+                continue
+
+            abstract = abstract_tag.text.replace("Abstract:", "").strip()
 
             papers.append({
                 "title": title,
