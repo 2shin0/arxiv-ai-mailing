@@ -30,7 +30,7 @@ def translate_text(text, source_lang="EN", target_lang="KO"):
     url = "https://api-free.deepl.com/v2/translate"
     params = {
         "auth_key": DEEPL_API_KEY,
-        "text": text[:512],  # 요청당 길이 제한
+        "text": text[:512],  
         "source_lang": source_lang,
         "target_lang": target_lang
     }
