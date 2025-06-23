@@ -2,6 +2,7 @@ from crawler import fetch_recent_ai_papers
 from summarizer import summarize_text
 from email_sender import send_email
 from datetime import datetime
+from summarizer import translate_text
 
 def make_digest(papers):
     lines = [f"## arXiv cs.AI 논문 요약 Digest - {datetime.today().strftime('%Y-%m-%d')}\n"]
