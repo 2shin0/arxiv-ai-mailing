@@ -1,0 +1,28 @@
+2025-06-26 09:05:12,540 - email_sender - ERROR - 설정 파일을 찾을 수 없습니다: config.ini
+2025-06-26 09:05:12,540 - email_sender - ERROR - 이메일 설정을 읽을 수 없어 이메일을 전송할 수 없습니다.
+2025-06-26 09:05:12,540 - email_sender - ERROR - 다이제스트 이메일 전송에 실패했습니다.
+2025-06-26 09:05:12,542 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:09:57,092 - email_sender - ERROR - 다이제스트 파일을 찾을 수 없습니다: results\arxiv_20250626.txt
+2025-06-26 09:09:57,092 - email_sender - ERROR - 다이제스트 파일을 찾을 수 없습니다: results\arxiv_20250626.txt
+2025-06-26 09:10:33,376 - email_sender - ERROR - 설정 파일을 찾을 수 없습니다: config.ini
+2025-06-26 09:10:33,376 - email_sender - ERROR - 이메일 설정을 읽을 수 없어 이메일을 전송할 수 없습니다.
+2025-06-26 09:10:33,376 - email_sender - ERROR - 다이제스트 이메일 전송에 실패했습니다.
+2025-06-26 09:10:33,379 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:11:06,852 - email_sender - ERROR - 설정 파일 읽기 오류: File contains no section headers.
+file: 'config.py', line: 1
+'import os\n'
+2025-06-26 09:11:06,852 - email_sender - ERROR - 이메일 설정을 읽을 수 없어 이메일을 전송할 수 없습니다.
+2025-06-26 09:11:06,852 - email_sender - ERROR - 다이제스트 이메일 전송에 실패했습니다.
+2025-06-26 09:11:06,855 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:11:41,342 - email_sender - ERROR - 설정 파일 읽기 오류: File contains no section headers.
+file: '../config.py', line: 1
+'import os\n'
+2025-06-26 09:11:41,342 - email_sender - ERROR - 이메일 설정을 읽을 수 없어 이메일을 전송할 수 없습니다.
+2025-06-26 09:11:41,342 - email_sender - ERROR - 다이제스트 이메일 전송에 실패했습니다.
+2025-06-26 09:11:41,347 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:13:13,549 - email_sender - ERROR - 다이제스트 이메일 전송 중 오류 발생: name 'read_config' is not defined
+2025-06-26 09:13:13,549 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:18:43,649 - email_sender - ERROR - 다이제스트 이메일 전송 중 오류 발생: name 'read_config' is not defined
+2025-06-26 09:18:43,649 - email_sender - INFO - 다이제스트 이메일 미리보기가 생성되었습니다: preview_digest_email.html
+2025-06-26 09:20:52,756 - email_sender - INFO - 이메일이 성공적으로 전송되었습니다: statisticlee@gmail.com
+2025-06-26 09:20:52,756 - email_sender - INFO - 다이제스트 이메일이 성공적으로 전송되었습니다: statisticlee@gmail.com
