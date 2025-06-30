@@ -6,16 +6,15 @@ def preview_email_html(subject, body, output_path="preview_email.html"):
       <head>
         <meta charset="UTF-8">
       </head>
-      <body style="font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f8f9fa; padding: 40px 0; margin: 0;">
-        <div style="max-width: 640px; margin: auto; background-color: #ffffff; border-radius: 12px; padding: 40px 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-          <h1 style="color: #222222; font-size: 24px; margin-bottom: 20px;">주제입니다.</h1>
-          <div style="color: #444444; font-size: 16px; line-height: 1.7; white-space: pre-wrap;">
-            이메일 내용입니다.
-          </div>
-          <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
-          <div style="font-size: 12px; color: #999999; text-align: center;">
+      <body style="font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f4f4; padding: 30px; margin: 0;">
+        <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <h2 style="color: #333333; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">{subject}</h2>
+          <p style="color: #555555; line-height: 1.6; font-size: 16px;">
+            {body_html}
+          </p>
+          <div style="margin-top: 30px; font-size: 12px; color: #999999; border-top: 1px solid #e0e0e0; padding-top: 20px;">
             이 메일은 시스템에서 자동 발송되었습니다.<br>
-            문의: <a href="mailto:02.shin.00@gmail.com" style="color: #999999;">02.shin.00@gmail.com</a>
+            문의: <a href="mailto:support@example.com" style="color: #999999;">support@example.com</a>
           </div>
         </div>
       </body>
