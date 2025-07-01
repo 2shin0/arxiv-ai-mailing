@@ -3,6 +3,8 @@ from summarizer import summarize_text, translate_text
 from email_sender import send_email
 from datetime import datetime
 import re
+import os
+import json
 
 LLM_PATTERN = re.compile(r'\b(llm|language model(?:s)?|(?:^|[^a-zA-Z])lm(?:$|[^a-zA-Z]))\b')
 
@@ -33,7 +35,7 @@ def make_digest(papers):
             lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
-        lines.append("<a href='https://arxiv.org/search/?query=language+model&searchtype=all&source=header' target='_blank'>📎 LLM 논문 모두 보기</a><br><br>")
+        lines.append("<a href='https://2shin0.tistory.com/14' target='_blank'>📎 LLM 논문 모두 보기</a><br><br>")
 
     if other_papers:
         lines.append("<h3>📚 그 외 논문</h3>")
@@ -46,7 +48,7 @@ def make_digest(papers):
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
 
-    lines.append("<a href='https://arxiv.org/list/cs.AI/pastweek?show=100' target='_blank'>📚 전체 논문 보러가기</a>")
+    lines.append("<a href='https://2shin0.tistory.com/14' target='_blank'>📚 전체 논문 보러가기</a>")
 
     return '\n'.join(lines)
 
@@ -55,6 +57,16 @@ def main():
     if not papers:
         print("어제 등록된 논문이 없습니다.")
         return
+
+    today_str = datetime.today().strftime('%y%m%d')
+    results_dir = "results"
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    
+    file_path = os.path.join(results_dir, f"arxiv_{today_str}.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(papers, f, ensure_ascii=False, indent=4)
+    print(f"크롤링된 논문 {len(papers)}개가 '{file_path}'에 저장되었습니다.")
 
     digest = make_digest(papers)
     
@@ -67,9 +79,9 @@ def main():
     else:
         print("이메일 전송에 실패했습니다. 로그를 확인하세요.")
         # 실패 시 다이제스트를 파일로 저장
-        with open(f"arxiv_digest_{datetime.today().strftime('%Y%m%d')}.txt", "w", encoding="utf-8") as f:
+        with open(f"arxiv_digest_{today_str}.txt", "w", encoding="utf-8") as f:
             f.write(digest)
-        print(f"다이제스트가 파일로 저장되었습니다: arxiv_digest_{datetime.today().strftime('%Y%m%d')}.txt")
+        print(f"다이제스트가 파일로 저장되었습니다: arxiv_digest_{today_str}.txt")
 
 if __name__ == "__main__":
     main()
