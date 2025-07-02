@@ -58,7 +58,7 @@ def make_digest(papers, llm_papers):
             lines.append(f"- 요약 (영문): {paper['summary_en']}")
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
 
-    all_digest_url = f"{GITHUB_REPO_URL}/전체/{today}.md"
+    all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
     lines.append(f"<a href='{all_digest_url}' target='_blank'>📚 전체 논문 보러가기</a>")
 
     return '\n'.join(lines)
@@ -84,7 +84,7 @@ def main():
     today_str_for_md = datetime.today().strftime('%Y-%m-%d')
     digest_dir = "digest"
     llm_digest_dir = os.path.join(digest_dir, "LLM")
-    all_digest_dir = os.path.join(digest_dir, "전체")
+    all_digest_dir = os.path.join(digest_dir, "ALL")
     os.makedirs(llm_digest_dir, exist_ok=True)
     os.makedirs(all_digest_dir, exist_ok=True)
 
