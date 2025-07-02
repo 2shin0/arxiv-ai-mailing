@@ -50,7 +50,7 @@ def make_digest(papers, llm_papers):
         lines.append(f"<a href='{llm_digest_url}' target='_blank'>📎 LLM 논문 모두 보기</a><br><br>")
 
     if other_papers_to_display:
-        lines.append("<h3>📚 그 외 논문</h3>")
+        lines.append("<h3>📚 전체 논문</h3>")
         for i, paper in enumerate(other_papers_to_display, 1):
             lines.append(f"<strong>{i}. {paper['title']}</strong>")
             lines.append(f"- Authors: {paper['authors']}")
@@ -101,10 +101,22 @@ def main():
 
     print("GitHub으로 다이제스트 배포 중...")
     try:
-        subprocess.run(["bash", "./deploy_digest.sh"], check=True, shell=True)
+        result = subprocess.run(
+            ["bash", "./deploy_digest.sh"], 
+            check=True, 
+            shell=True,
+            capture_output=True, 
+            text=True,
+            encoding='utf-8'
+        )
         print("배포 성공!")
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
         print(f"배포 실패: {e}")
+        print("\n--- SCRIPT OUTPUT (STDOUT) ---")
+        print(e.stdout)
+        print("\n--- SCRIPT ERROR (STDERR) ---")
+        print(e.stderr)
 
     # 5. 이메일 생성 및 전송
     print("이메일 다이제스트 생성 중...")
