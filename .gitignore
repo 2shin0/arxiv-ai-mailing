@@ -1,5 +1,14 @@
+# Environments
 .env
-venv
-__pycache__
-results
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated files
+results/
+digest/
+
+# Specific files
 one_sender/.env
