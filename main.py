@@ -38,7 +38,7 @@ def make_digest(papers, llm_papers):
     other_papers_to_display = other_papers[:5]
 
     if llm_papers_to_display:
-        lines.append("<h3>🔍 LLM 관련 논문</h3>")
+        lines.append("<h3>🔤 LLM 관련 논문</h3>")
         for i, paper in enumerate(llm_papers_to_display, 1):
             lines.append(f"<strong>{i}. {paper['title']}</strong>")
             lines.append(f"- Authors: {paper['authors']}")
@@ -47,7 +47,13 @@ def make_digest(papers, llm_papers):
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
         
         llm_digest_url = f"{GITHUB_REPO_URL}/LLM/{today}.md"
-        lines.append(f"<a href='{llm_digest_url}' target='_blank'>📎 LLM 논문 모두 보기</a><br><br>")
+        lines.append(
+    f"""<a href="{llm_digest_url}" target="_blank" style="display:inline-block; width:160px; text-align:center; padding:10px 20px;margin:10px 0;
+                  background-color:#2196F3;color:white;text-decoration:none;
+                  border-radius:5px;font-weight:bold;">
+          🔤 LLM 논문 보러가기
+        </a>"""
+)
 
     if other_papers_to_display:
         lines.append("<h3>📚 전체 논문</h3>")
@@ -59,7 +65,13 @@ def make_digest(papers, llm_papers):
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
 
     all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
-    lines.append(f"<a href='{all_digest_url}' target='_blank'>📚 전체 논문 보러가기</a>")
+    lines.append(
+    f"""<a href="{all_digest_url}" target="_blank" style="display:inline-block; width:160px; text-align:center; padding:10px 20px;margin:10px 0;
+                  background-color:#2196F3;color:white;text-decoration:none;
+                  border-radius:5px;font-weight:bold;">
+          📚 전체 논문 보러가기
+        </a>"""
+)
 
     return '\n'.join(lines)
 

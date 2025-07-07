@@ -34,6 +34,12 @@ def send_email(subject, body):
 
     # HTML 버전 - 줄바꿈을 <br>로 변환
     body_html = body.replace('\n', '<br>')
+  
+    digest_notice = """
+    <div style="font-size: 14px; color: #888888; margin-bottom: 20px;">
+        📌 본 Digest는 한국 시간 기준 <strong>오늘 오전 9시 arXiv에 발표된 AI 논문</strong>을 요약한 것입니다.
+    </div>
+    """
 
     html_body = f"""
     <html>
@@ -43,6 +49,7 @@ def send_email(subject, body):
       <body style="font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f4f4; padding: 30px; margin: 0;">
         <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
           <h2 style="color: #333333; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">{subject}</h2>
+          {digest_notice}
           <p style="color: #555555; line-height: 1.6; font-size: 16px;">
             {body_html}
           </p>
