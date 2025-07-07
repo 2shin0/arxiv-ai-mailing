@@ -48,10 +48,11 @@ def make_digest(papers, llm_papers):
         
         llm_digest_url = f"{GITHUB_REPO_URL}/LLM/{today}.md"
         lines.append(
-    f"""<a href="{llm_digest_url}" target="_blank" style="display:inline-block; width:160px; text-align:center; padding:10px 20px;margin:10px 0;
-                  background-color:#2196F3;color:white;text-decoration:none;
-                  border-radius:5px;font-weight:bold;">
-          🔤 LLM 논문 보러가기
+    f"""<a href="{llm_digest_url}" target="_blank" 
+            style="display:inline-block; background-color:#2196F3; color:white; 
+                   text-decoration:none; padding:10px 20px; 
+                   border-radius:5px; font-weight:bold; font-family:sans-serif;">
+            🔤 LLM 논문 보러가기
         </a>"""
 )
 
@@ -66,10 +67,11 @@ def make_digest(papers, llm_papers):
 
     all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
     lines.append(
-    f"""<a href="{all_digest_url}" target="_blank" style="display:inline-block; width:160px; text-align:center; padding:10px 20px;margin:10px 0;
-                  background-color:#2196F3;color:white;text-decoration:none;
-                  border-radius:5px;font-weight:bold;">
-          📚 전체 논문 보러가기
+    f"""<a href="{all_digest_url}" target="_blank" 
+            style="display:inline-block; background-color:#2196F3; color:white; 
+                   text-decoration:none; padding:10px 20px; 
+                   border-radius:5px; font-weight:bold; font-family:sans-serif;">
+            📚 전체 논문 보러가기
         </a>"""
 )
 
