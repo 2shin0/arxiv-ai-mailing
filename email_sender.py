@@ -32,9 +32,6 @@ def send_email(subject, body):
     # 일반 텍스트 버전
     text_part = MIMEText(body, 'plain')
 
-    # HTML 버전 - 줄바꿈을 <br>로 변환
-    body_html = body.replace('\n', '<br>')
-  
     digest_notice = """
     <div style="font-size: 14px; color: #888888; margin-bottom: 20px;">
         📌 본 Digest는 한국 시간 기준 <strong>오늘 오전 9시 arXiv에 발표된 AI 논문</strong>을 요약한 것입니다.
@@ -50,9 +47,7 @@ def send_email(subject, body):
         <div style="max-width: 600px; margin: auto; background-color: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
           <h2 style="color: #333333; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">{subject}</h2>
           {digest_notice}
-          <p style="color: #555555; line-height: 1.6; font-size: 16px;">
-            {body_html}
-          </p>
+          {body}
           <div style="margin-top: 30px; font-size: 12px; color: #999999; border-top: 1px solid #e0e0e0; padding-top: 20px;">
             이 메일은 시스템에서 자동 발송되었습니다.<br>
             문의: <a href="mailto:02.shin.00@gmail.com" style="color: #999999;">02.shin.00@gmail.com</a>
@@ -84,4 +79,4 @@ def send_email(subject, body):
         return False
 
 if __name__ == "__main__":
-    send_email("테스트 메일", "안녕하세요,\n\n이것은 모던한 디자인을 적용한 테스트 메일입니다.\n\n감사합니다.")
+    send_email("테스트 메일", "<strong>안녕하세요,</strong><br><br>이것은 <em>모던한 디자인</em>을 적용한 테스트 메일입니다.<br><br>감사합니다.")

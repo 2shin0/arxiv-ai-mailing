@@ -1,6 +1,11 @@
 #!/bin/bash
 # deploy_digest.sh
 
+# .env 로딩
+set -o allexport
+source .env
+set +o allexport
+
 BRANCH=arxiv-digest
 DATE=$(date +%Y-%m-%d)
 FILENAME="$DATE.md"
@@ -15,17 +20,15 @@ CUR_BRANCH=$(git branch --show-current)
 mkdir -p $LLM_DIGEST_DIR
 mkdir -p $ALL_DIGEST_DIR
 
-# 변경사항 자동 커밋 (혹은 stash 사용 가능)
+# 변경사항 자동 커밋
 git add .
 git commit -m "Auto-commit before switching to $BRANCH" || echo "No changes to commit"
 
 # 브랜치 전환
 git checkout $BRANCH
-
-# 최신화
 git pull origin $BRANCH
 
-# 폴더 생성 및 파일 복사
+# 파일 복사
 mkdir -p LLM
 mkdir -p ALL
 cp "$LLM_DIGEST_DIR/$FILENAME" "./LLM/"
@@ -34,7 +37,7 @@ cp "$ALL_DIGEST_DIR/$FILENAME" "./ALL/"
 # 커밋 & 푸시
 git add LLM/"$FILENAME" ALL/"$FILENAME"
 git commit -m "Add digest for $DATE"
-git push origin $BRANCH
+git push "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/$GITHUB_USERNAME/arxiv-ai-mailing.git" $BRANCH
 
 # 원래 브랜치로 돌아가기
 git checkout $CUR_BRANCH
