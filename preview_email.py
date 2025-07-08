@@ -1,4 +1,7 @@
 import os
+import webbrowser
+from datetime import datetime
+from main import make_digest
 
 def preview_email(subject, body_html):
     """이메일 미리보기용 HTML 파일을 생성합니다."""
@@ -28,9 +31,36 @@ def preview_email(subject, body_html):
     with open(preview_path, "w", encoding="utf-8") as f:
         f.write(full_html)
     print(f"이메일 미리보기를 '{preview_path}'로 저장했습니다.")
-    # 선택: 자동으로 브라우저에서 열기
     try:
-        import webbrowser
         webbrowser.open(f"file://{os.path.abspath(preview_path)}")
     except Exception as e:
         print(f"브라우저 열기에 실패했습니다: {e}")
+
+if __name__ == "__main__":
+    # --- 미리보기를 위한 가상 데이터 --- #
+    mock_llm_paper = {
+        'title': 'Awesome LLM Paper Title',
+        'authors': 'John Doe, Jane Smith',
+        'url': 'http://arxiv.org/abs/2301.00001',
+        'summary_en': 'This is an English summary of the awesome LLM paper.',
+        'summary_ko': '이것은 멋진 LLM 논문의 한글 요약입니다.',
+    }
+    mock_other_paper = {
+        'title': 'Interesting AI Paper Title',
+        'authors': 'Peter Jones',
+        'url': 'http://arxiv.org/abs/2301.00002',
+        'summary_en': 'This is an English summary of another interesting AI paper.',
+        'summary_ko': '이것은 또 다른 흥미로운 AI 논문의 한글 요약입니다.',
+    }
+    mock_papers = [mock_llm_paper, mock_other_paper]
+    mock_llm_papers = [mock_llm_paper]
+    # --- --- #
+
+    today_str = datetime.today().strftime('%Y-%m-%d')
+    subject = f"[미리보기] arXiv AI Digest - {today_str}"
+    
+    # main.py의 make_digest 함수를 사용하여 이메일 본문 생성
+    email_body = make_digest(mock_papers, mock_llm_papers)
+    
+    # 미리보기 생성
+    preview_email(subject, email_body)

@@ -47,17 +47,21 @@ def make_digest(papers, llm_papers):
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
         
         llm_digest_url = f"{GITHUB_REPO_URL}/LLM/{today}.md"
-        lines.append(
-    f"""<a href="{llm_digest_url}" target="_blank" 
-            style="display:inline-block; background-color:#2196F3; color:white; 
-                   text-decoration:none; padding:10px 20px; 
-                   border-radius:5px; font-weight:bold; font-family:sans-serif;">
-            🔤 LLM 논문 보러가기
-        </a>"""
-)
+        button_html = f'''
+        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+          <tr>
+            <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:10px 20px;background:#2196F3;" valign="middle">
+              <a href="{llm_digest_url}" style="display:inline-block;background:#2196F3;color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 20px;mso-padding-alt:0px;border-radius:5px;" target="_blank">
+                🔤 LLM 논문 보러가기
+              </a>
+            </td>
+          </tr>
+        </table>
+        '''
+        lines.append(button_html)
 
     if other_papers_to_display:
-        lines.append("<h3>📚 전체 논문</h3>")
+        lines.append("<h3 style='margin-top: 60px;'>📚 전체 논문</h3>")
         for i, paper in enumerate(other_papers_to_display, 1):
             lines.append(f"<strong>{i}. {paper['title']}</strong>")
             lines.append(f"- Authors: {paper['authors']}")
@@ -66,14 +70,18 @@ def make_digest(papers, llm_papers):
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
 
     all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
-    lines.append(
-    f"""<a href="{all_digest_url}" target="_blank" 
-            style="display:inline-block; background-color:#2196F3; color:white; 
-                   text-decoration:none; padding:10px 20px; 
-                   border-radius:5px; font-weight:bold; font-family:sans-serif;">
+    button_html = f'''
+    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+      <tr>
+        <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:10px 20px;background:#2196F3;" valign="middle">
+          <a href="{all_digest_url}" style="display:inline-block;background:#2196F3;color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 20px;mso-padding-alt:0px;border-radius:5px;" target="_blank">
             📚 전체 논문 보러가기
-        </a>"""
-)
+          </a>
+        </td>
+      </tr>
+    </table>
+    '''
+    lines.append(button_html)
 
     return '\n'.join(lines)
 
