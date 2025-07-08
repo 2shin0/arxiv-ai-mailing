@@ -162,7 +162,8 @@ def main():
     digest_html = make_digest(processed_papers, llm_papers)
     
     print("이메일 전송 중...")
-    email_result = send_email("[arXiv AI Digest] 어제의 논문 요약", digest_html)
+    today = datetime.today().strftime('%Y-%m-%d')
+    email_result = send_email(f"[페이퍼 루틴] {today} 논문 루틴 완료!", digest_html)
     
     if email_result:
         print("모든 처리가 완료되었습니다.")
