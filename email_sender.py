@@ -34,7 +34,7 @@ def send_email(subject, body):
 
     digest_notice = """
     <div style="font-size: 14px; color: #888888; margin-bottom: 20px;">
-        📌 본 Digest는 한국 시간 기준 <strong>오늘 오전 9시 arXiv에 발표된 AI 논문</strong>을 요약한 것입니다.
+        📌 본 Digest는 한국 시간 기준 <strong>오늘 arXiv에 발표된 AI 논문</strong>을 요약한 것입니다.
     </div>
     """
 

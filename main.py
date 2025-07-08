@@ -40,10 +40,10 @@ def make_digest(papers, llm_papers):
     if llm_papers_to_display:
         lines.append("<h3>🔤 LLM 관련 논문</h3>")
         for i, paper in enumerate(llm_papers_to_display, 1):
-            lines.append(f"<strong>{i}. {paper['title']}</strong>")
-            lines.append(f"- Authors: {paper['authors']}")
-            lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
-            lines.append(f"- 요약 (영문): {paper['summary_en']}")
+            lines.append(f"<strong>{i}. {paper['title']}</strong><br>")
+            lines.append(f"- Authors: {paper['authors']}<br>")
+            lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a><br>")
+            lines.append(f"- 요약 (영문): {paper['summary_en']}<br>")
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
         
         llm_digest_url = f"{GITHUB_REPO_URL}/LLM/{today}.md"
@@ -78,10 +78,10 @@ def make_digest(papers, llm_papers):
     if other_papers_to_display:
         lines.append("<h3 style='margin-top: 60px;'>📚 전체 논문</h3>")
         for i, paper in enumerate(other_papers_to_display, 1):
-            lines.append(f"<strong>{i}. {paper['title']}</strong>")
-            lines.append(f"- Authors: {paper['authors']}")
-            lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
-            lines.append(f"- 요약 (영문): {paper['summary_en']}")
+            lines.append(f"<strong>{i}. {paper['title']}</strong><br>")
+            lines.append(f"- Authors: {paper['authors']}<br>")
+            lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a><br>")
+            lines.append(f"- 요약 (영문): {paper['summary_en']}<br>")
             lines.append(f"- 요약 (한글): {paper['summary_ko']}<br><br>")
 
     all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
