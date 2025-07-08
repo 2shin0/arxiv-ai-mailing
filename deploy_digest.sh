@@ -15,8 +15,9 @@ CUR_BRANCH=$(git branch --show-current)
 mkdir -p $LLM_DIGEST_DIR
 mkdir -p $ALL_DIGEST_DIR
 
-# 예: Python 코드로 digest markdown 생성
-# python generate_digest.py 
+# 변경사항 자동 커밋 (혹은 stash 사용 가능)
+git add .
+git commit -m "Auto-commit before switching to $BRANCH" || echo "No changes to commit"
 
 # 브랜치 전환
 git checkout $BRANCH

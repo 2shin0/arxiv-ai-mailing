@@ -48,15 +48,30 @@ def make_digest(papers, llm_papers):
         
         llm_digest_url = f"{GITHUB_REPO_URL}/LLM/{today}.md"
         button_html = f'''
-        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-          <tr>
-            <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:0px 20px 10px 20px;background:#2196F3;" valign="middle">
-              <a href="{llm_digest_url}" style="display:inline-block;background:#2196F3;color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:0 20px 10px;mso-padding-alt:0px;border-radius:5px;" target="_blank">
-                🔤 LLM 논문 보러가기
-              </a>
-            </td>
-          </tr>
-        </table>
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+  <tr>
+    <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:10px 20px;background:#2196F3;" valign="middle">
+      <a href="{llm_digest_url}"
+         style="display:inline-block;
+                background:#2196F3;
+                color:#ffffff;
+                font-family:sans-serif;
+                font-size:13px;
+                font-weight:bold;
+                line-height:25px;
+                margin:0;
+                text-decoration:none;
+                text-transform:none;
+                padding:10px 20px;
+                mso-padding-alt:10px 20px;
+                border-radius:5px;"
+         target="_blank">
+        🔤 LLM 논문 보러가기
+      </a>
+    </td>
+  </tr>
+</table>
+
         '''
         lines.append(button_html)
 
@@ -71,16 +86,30 @@ def make_digest(papers, llm_papers):
 
     all_digest_url = f"{GITHUB_REPO_URL}/ALL/{today}.md"
     button_html = f'''
-    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-      <tr>
-        <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:0px 20px 10px 20px;background:#2196F3;" valign="middle">
-          <a href="{all_digest_url}" style="display:inline-block;background:#2196F3;color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:0 20px 10px;mso-padding-alt:0px;border-radius:5px;" target="_blank">
-            📚 전체 논문 보러가기
-          </a>
-        </td>
-      </tr>
-    </table>
-    '''
+<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+  <tr>
+    <td align="center" bgcolor="#2196F3" role="presentation" style="border:none;border-radius:5px;cursor:auto;mso-padding-alt:10px 20px;background:#2196F3;" valign="middle">
+      <a href="{all_digest_url}"
+         style="display:inline-block;
+                background:#2196F3;
+                color:#ffffff;
+                font-family:sans-serif;
+                font-size:13px;
+                font-weight:bold;
+                line-height:25px;
+                margin:0;
+                text-decoration:none;
+                text-transform:none;
+                padding:10px 20px;
+                mso-padding-alt:10px 20px;
+                border-radius:5px;"
+         target="_blank">
+        📚 전체 논문 보러가기
+      </a>
+    </td>
+  </tr>
+</table>
+'''
     lines.append(button_html)
 
     return '\n'.join(lines)
