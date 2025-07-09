@@ -163,7 +163,7 @@ def main():
     
     print("이메일 전송 중...")
     today = datetime.today().strftime('%Y-%m-%d')
-    email_result = send_email(f"[페이퍼 루틴] {today} 논문 루틴 완료!", digest_html)
+    email_result = send_email(f"[AI 페이퍼 루틴] {today} 논문 읽는 습관 완료!", digest_html)
     
     if email_result:
         print("모든 처리가 완료되었습니다.")
