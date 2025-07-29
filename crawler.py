@@ -4,6 +4,10 @@ from datetime import datetime, timedelta, timezone
 import re
 import time
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (compatible; ArxivPaperFetcher/1.0; +https://github.com/2shin0/arxiv-ai-mailing/tree/main)"
+}
+
 ARXIV_BASE_URL = "https://arxiv.org/list/cs.AI/recent"
 
 def fetch_recent_ai_papers(max_pages=10):
@@ -32,7 +36,7 @@ def fetch_recent_ai_papers(max_pages=10):
         print(f"[INFO] Fetching page {page+1}/{max_pages} (papers {skip+1}-{skip+50})")
         
         try:
-            response = requests.get(url)
+            response = requests.get(url, headers=headers)
             if response.status_code != 200:
                 print(f"[ERROR] Failed to fetch arXiv page {page+1}. Status code: {response.status_code}")
                 continue
