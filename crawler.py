@@ -27,7 +27,7 @@ def fetch_recent_ai_papers(max_pages=10):
     # 어제 날짜 (UTC 기준)
     # yesterday = datetime.now(timezone.utc) - timedelta(days=1)
     # 테스트용 고정 날짜 (필요시 사용)
-    yesterday = datetime(2025, 7, 29, tzinfo=timezone.utc)
+    yesterday = datetime(2025, 7, 28, tzinfo=timezone.utc)
     print(f"[INFO] Filtering papers submitted on: {yesterday.strftime('%Y-%m-%d')}")
     
     for page in range(max_pages):
