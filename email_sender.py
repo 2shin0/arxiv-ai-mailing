@@ -5,7 +5,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from config import EMAIL_ADDRESS, EMAIL_PASSWORD, GOOGLE_SHEET_NAME, GOOGLE_WORKSHEET_NAME, GOOGLE_API_CREDENTIALS_PATH
+from config import EMAIL_ADDRESS, EMAIL_PASSWORD, GOOGLE_SHEET_NAME, GOOGLE_WORKSHEET_NAME, GOOGLE_API_CREDENTIALS_PATH, GOOGLE_SCRIPT_ID
 
 # 오프라인 모드 설정
 OFFLINE_MODE = os.environ.get('OFFLINE_MODE', 'False').lower() in ('true', '1', 't')
@@ -77,6 +77,9 @@ def send_email(subject, body):
 
                 # HTML 본문 생성
                 body_html = body.replace('\n', '<br>')
+                # 구독 해지 URL 생성
+                unsubscribe_url = f"https://script.google.com/macros/s/{GOOGLE_SCRIPT_ID}/exec?action=unsubscribe&email={recipient}"
+                
                 html_body = f"""
                 <html>
                   <head>
@@ -91,6 +94,13 @@ def send_email(subject, body):
                       <div style="margin-top: 30px; font-size: 12px; color: #999999; border-top: 1px solid #e0e0e0; padding-top: 20px;">
                         이 메일은 시스템에서 자동 발송되었습니다.<br>
                         문의: <a href="mailto:02.shin.00@gmail.com" style="color: #999999;">02.shin.00@gmail.com</a>
+                      </div>
+                      <!-- 이메일 하단에 추가할 구독해지 섹션 -->
+                      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                        <p>더 이상 이 뉴스레터를 받고 싶지 않으시다면</p>
+                        <a href="{unsubscribe_url}" 
+                           style="color: #dc2626; text-decoration: underline;">구독해지</a>
+                        <p style="margin-top: 10px;">© 2025 arXiv AI Newsletter : LLMxiv</p>
                       </div>
                     </div>
                   </body>
