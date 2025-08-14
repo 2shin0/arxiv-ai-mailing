@@ -107,9 +107,9 @@ def main():
     else:
         print("이메일 전송에 실패했습니다. 로그를 확인하세요.")
         # 실패 시 다이제스트를 HTML 파일로 저장
-        with open(f"arxiv_digest_{today_str}.html", "w", encoding="utf-8") as f:
+        with open(f"results_html/arxiv_digest_{today_str}.html", "w", encoding="utf-8") as f:
             f.write(digest_html)
-        print(f"다이제스트가 HTML 파일로 저장되었습니다: arxiv_digest_{today_str}.html")
+        print(f"다이제스트가 HTML 파일로 저장되었습니다: results_html/arxiv_digest_{today_str}.html")
 
 if __name__ == "__main__":
     main()
