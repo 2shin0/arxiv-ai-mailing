@@ -37,7 +37,7 @@ def make_digest(papers):
             lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
-        llm_url = f"https://2shin0.github.io/arxiv-ai-mailing/LLM/{today}.md"
+        llm_url = f"https://2shin0.github.io/arxiv-ai-mailing/LLM/{today}"
         lines.append(f'<a href="{llm_url}" target="_blank" style="display: inline-block; padding: 10px 15px; font-size: 14px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;">📎 LLM 논문 모두 보기</a><br><br>')
 
     if other_papers:
@@ -50,7 +50,7 @@ def make_digest(papers):
             lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
-        all_url = f"https://2shin0.github.io/arxiv-ai-mailing/ALL/{today}.md"
+        all_url = f"https://2shin0.github.io/arxiv-ai-mailing/ALL/{today}"
         lines.append(f'<a href="{all_url}" target="_blank" style="display: inline-block; padding: 10px 15px; font-size: 14px; color: #fff; background-color: #28a745; text-decoration: none; border-radius: 5px;">📚 전체 논문 보러가기</a>')
 
     return '\n'.join(lines)
