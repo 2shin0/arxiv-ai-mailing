@@ -6,7 +6,7 @@ title: "ArXiv AI Digest"
 # 🤖 ArXiv AI Digest
 
 매일 업데이트되는 최신 AI 논문 다이제스트입니다.
-<br>
+<br><br>
 ## 📚 카테고리별 다이제스트
 
 <div class="category-grid">
