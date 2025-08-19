@@ -100,7 +100,7 @@ def main():
     # 5. 이메일 본문 생성 및 전송
     print("이메일 전송을 준비합니다...")
     digest_html = make_digest(papers) # 요약/번역 기능이 포함된 이메일 본문 생성
-    email_result = send_email("[arXiv AI Digest] 어제의 논문 요약", digest_html)
+    email_result = send_email("[LLMxiv] 데일리 논문 리뷰", digest_html)
 
     if email_result:
         print("모든 처리가 완료되었습니다.")
