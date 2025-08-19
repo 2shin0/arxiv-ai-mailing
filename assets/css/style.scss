@@ -1,0 +1,78 @@
+@import "minima";
+
+/* 커스텀 스타일 */
+body {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+}
+
+.site-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.site-title {
+  color: white !important;
+  font-weight: 700;
+}
+
+/* 논문 카드 스타일 */
+.paper-card {
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px 0;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.paper-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.paper-title {
+  color: #2c3e50;
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.paper-authors {
+  color: #7f8c8d;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+.paper-summary {
+  color: #34495e;
+  margin-bottom: 10px;
+}
+
+.paper-link {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.paper-link:hover {
+  background: #2980b9;
+  color: white;
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+  
+  .paper-card {
+    background: #2d2d2d;
+    border-color: #404040;
+  }
+}
