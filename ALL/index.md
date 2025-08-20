@@ -6,18 +6,18 @@ permalink: /ALL/
 
 # 전체 AI 논문 다이제스트
 
-arXiv cs.AI 카테고리의 모든 AI 논문들의 일별 다이제스트입니다.
+전체 AI 관련 논문들의 일별 다이제스트입니다.
 
 ## 최근 다이제스트
 
-{% assign all_files = site.pages | where_exp: "page", "page.path contains 'ALL/'" | where_exp: "page", "page.name contains '.md'" | where_exp: "page", "page.name != 'index.md'" | sort: "name" | reverse %}
-
-{% for page in all_files %}
-  {% assign date_string = page.name | remove: ".md" %}
-  {% assign year = date_string | slice: 0, 4 %}
-  {% assign month = date_string | slice: 5, 2 %}
-  {% assign day = date_string | slice: 8, 2 %}
-- [{{ year }}년 {{ month }}월 {{ day }}일]({{ page.url }}) - {{ page.date | date: "%Y-%m-%d" }}
-{% endfor %}
+- [2025년 08월 20일](2025-08-20) - 2025-08-20
+- [2025년 08월 19일](2025-08-19) - 2025-08-19
+- [2025년 08월 14일](2025-08-14) - 2025-08-14
+- [2025년 07월 29일](2025-07-29) - 2025-07-29
+- [2025년 07월 24일](2025-07-24) - 2025-07-24
+- [2025년 07월 09일](2025-07-09) - 2025-07-09
+- [2025년 07월 08일](2025-07-08) - 2025-07-08
+- [2025년 07월 07일](2025-07-07) - 2025-07-07
+- [2025년 07월 02일](2025-07-02) - 2025-07-02
 
 [← 메인으로 돌아가기]({{ site.baseurl }}/)
