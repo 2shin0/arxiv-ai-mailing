@@ -64,7 +64,10 @@ def generate_index_page(category_path, title, permalink):
         f"permalink: {permalink}",
         "---",
         "",
-        f"# {title}",
+        '<div class="header-flex">',
+        f'  <h1>{title}</h1>',
+        '  <a href="{{ site.baseurl }}/" class="btn-back">← 메인으로</a>',
+        '</div>',
         "",
         f"{title.replace('논문 다이제스트', '관련 논문들의 일별 다이제스트입니다.')}",
         "",
@@ -80,10 +83,7 @@ def generate_index_page(category_path, title, permalink):
         link_name = date_str.replace('.md', '')
         lines.append(f"- [{year}년 {month:02d}월 {day:02d}일]({link_name}) - {date_str}")
     
-    lines.extend([
-        "",
-        "[← 메인으로 돌아가기]({{ site.baseurl }}/)"
-    ])
+    lines.append("")
     
     # 인덱스 파일 저장
     index_path = os.path.join(category_path, "index.md")
