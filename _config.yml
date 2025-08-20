@@ -7,12 +7,10 @@ url: "https://2shin0.github.io"
 # Build settings
 markdown: kramdown
 highlighter: rouge
-theme: minima
 
 # Jekyll configuration
 plugins:
   - jekyll-feed
-  - jekyll-sitemap
 
 # Include/Exclude files
 include:
@@ -29,15 +27,6 @@ exclude:
   - .gitignore
   - .gitattributes
   - readme.md
-
-# Collections for better organization
-collections:
-  llm_posts:
-    output: true
-    permalink: /LLM/:name/
-  all_posts:
-    output: true
-    permalink: /ALL/:name/
 
 # Defaults
 defaults:
