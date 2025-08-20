@@ -15,7 +15,6 @@ title: "ArXiv AI Digest"
     <p>대규모 언어모델 관련 최신 연구</p>
     <a href="./LLM/" class="btn-primary">LLM 다이제스트 보기</a>
   </div>
-  <br>
   <div class="category-card">
     <h3>🔬 전체 AI 논문</h3>
     <p>AI 전 분야의 최신 연구 동향</p>
