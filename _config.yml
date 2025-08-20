@@ -1,0 +1,60 @@
+# Site settings
+title: "ArXiv AI Digest"
+description: "매일 업데이트되는 최신 AI 논문 다이제스트"
+baseurl: "/arxiv-ai-mailing"
+url: "https://2shin0.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Jekyll configuration
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Include/Exclude files
+include:
+  - LLM/
+  - ALL/
+  - digest/
+
+exclude:
+  - venv/
+  - __pycache__/
+  - "*.py"
+  - "*.sh"
+  - requirements.txt
+  - .gitignore
+  - .gitattributes
+  - readme.md
+
+# Collections for better organization
+collections:
+  llm_posts:
+    output: true
+    permalink: /LLM/:name/
+  all_posts:
+    output: true
+    permalink: /ALL/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "LLM"
+      type: "pages"
+    values:
+      layout: "default"
+      category: "LLM"
+  - scope:
+      path: "ALL"
+      type: "pages"
+    values:
+      layout: "default"
+      category: "ALL"
