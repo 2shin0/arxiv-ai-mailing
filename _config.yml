@@ -12,6 +12,15 @@ highlighter: rouge
 plugins:
   - jekyll-feed
 
+# Collections
+collections:
+  llm_papers:
+    output: true
+    permalink: /LLM/:name/
+  all_papers:
+    output: true
+    permalink: /ALL/:name/
+
 # Include/Exclude files
 include:
   - LLM/

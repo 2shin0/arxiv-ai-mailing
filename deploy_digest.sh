@@ -6,6 +6,7 @@ set -x # 스크립트 실행 중에 모든 명령어 출력
 
 # --- 기본 변수 설정 ---
 BRANCH=arxiv-digest
+MAIN_BRANCH=main
 DATE=$(date +%Y-%m-%d)
 FILENAME="$DATE.md"
 DIGEST_DIR="./digest"
@@ -28,7 +29,7 @@ if ! git diff-index --quiet HEAD --; then
     STASHED=true
 fi
 
-# 브랜치 전환 및 최신화
+# === arxiv-digest 브랜치에 배포 ===
 echo "'$BRANCH' 브랜치로 전환합니다..."
 git checkout $BRANCH
 echo "원격 저장소의 최신 변경사항을 가져옵니다..."
@@ -60,6 +61,27 @@ if ! git diff-index --quiet --cached HEAD --; then
     git push origin $BRANCH
 else
     echo "커밋할 새로운 다이제스트 파일이 없습니다."
+fi
+
+# === main 브랜치에도 배포 (GitHub Pages용) ===
+echo "'$MAIN_BRANCH' 브랜치로 전환합니다..."
+git checkout $MAIN_BRANCH
+echo "원격 저장소의 최신 변경사항을 가져옵니다..."
+git pull origin $MAIN_BRANCH
+
+# LLM, ALL 폴더 전체를 main 브랜치에 복사
+echo "GitHub Pages용으로 LLM, ALL 폴더를 복사합니다..."
+git checkout $BRANCH -- LLM/ ALL/
+
+# main 브랜치에 커밋 & 푸시
+echo "main 브랜치에 변경사항을 커밋하고 푸시합니다..."
+git add LLM/ ALL/
+
+if ! git diff-index --quiet --cached HEAD --; then
+    git commit -m "Update digest folders for GitHub Pages ($DATE)"
+    git push origin $MAIN_BRANCH
+else
+    echo "main 브랜치에 커밋할 변경사항이 없습니다."
 fi
 
 # 원래 브랜치로 돌아가기
