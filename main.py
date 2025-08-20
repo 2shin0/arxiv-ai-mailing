@@ -6,7 +6,7 @@ import re
 import os
 import json
 import subprocess
-from exporter import generate_digest_markdown
+from exporter import generate_digest_markdown, update_all_indexes
 
 LLM_PATTERN = re.compile(r'\b(llm|language model(?:s)?|(?:^|[^a-zA-Z])lm(?:$|[^a-zA-Z]))\b', re.IGNORECASE)
 
@@ -82,6 +82,10 @@ def main():
     all_md_path = os.path.join('digest', 'ALL', f"{today_for_md}.md")
     generate_digest_markdown(llm_papers, llm_md_path, "LLM 관련 주요 논문")
     generate_digest_markdown(papers, all_md_path, "전체 AI 논문")
+
+    # 3.1. 인덱스 페이지 업데이트
+    print("인덱스 페이지를 업데이트합니다...")
+    update_all_indexes()
 
     # 4. GitHub으로 다이제스트 배포
     print("GitHub으로 다이제스트 배포 중...")
