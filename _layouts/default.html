@@ -79,23 +79,6 @@
       border-radius: 2px;
     }
 
-    .nav-link:hover {
-      background: rgba(255, 255, 255, 0.15);
-      transform: translateY(-2px);
-    }
-
-    .nav-link:hover::after {
-      width: 70%;
-    }
-
-    .nav-link.active {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .nav-link.active::after {
-      width: 70%;
-    }
-
     /* 브랜드 */
     .navbar-brand {
       color: white;
@@ -279,20 +262,30 @@
       .container { padding: 20px; }
     }
 
-    /* 키보드 접근성 */
-    .nav-link:focus-visible {
-      outline: none;
+    /* ===== Hover일 때만 반투명 배경 + 밑줄 ===== */
+    .navbar .nav-link { background: transparent; }
+    .navbar .nav-link::after { width: 0; }
+
+    .navbar .nav-link:hover {
       background: rgba(255, 255, 255, 0.15);
       transform: translateY(-2px);
     }
-    .nav-link:focus-visible::after { width: 70%; }
+    .navbar .nav-link:hover::after { width: 70%; }
 
-    /* 모바일 터치 피드백 */
-    .nav-link:active { 
-      background: rgba(255,255,255,0.15); 
-      transform: translateY(-2px);
+    /* active는 배경/밑줄 없음 (필요시 글자색만 강조 가능) */
+    .navbar .nav-link.active { background: transparent; }
+    .navbar .nav-link.active::after { width: 0; }
+
+    /* 키보드 접근성 */
+    .navbar .nav-link:focus-visible {
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
     }
-    .nav-link:active::after { width: 70%; }
+    .navbar .nav-link:focus-visible::after { width: 70%; }
+
+    /* 모바일 터치 피드백(선택) */
+    .navbar .nav-link:active { background: rgba(255,255,255,0.15); }
+    .navbar .nav-link:active::after { width: 70%; }
   </style>
 </head>
 <body>
