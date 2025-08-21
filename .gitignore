@@ -2,7 +2,6 @@
 venv
 __pycache__
 results
-one_sender/.env
 
 # Google API credentials
 credentials/
