@@ -6,7 +6,6 @@ permalink: /ALL/
 
 <div class="header-flex">
   <h1>전체 AI 논문 다이제스트</h1>
-  <a href="{{ site.baseurl }}/" class="btn-back">← 메인으로</a>
 </div>
 
 전체 AI 관련 논문들의 일별 다이제스트입니다.

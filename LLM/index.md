@@ -6,7 +6,6 @@ permalink: /LLM/
 
 <div class="header-flex">
   <h1>LLM 논문 다이제스트</h1>
-  <a href="{{ site.baseurl }}/" class="btn-back">← 메인으로</a>
 </div>
 
 LLM 관련 논문들의 일별 다이제스트입니다.
