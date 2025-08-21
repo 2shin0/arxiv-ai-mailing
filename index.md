@@ -28,8 +28,6 @@ title: "ArXiv AI Digest"
 - **자동 요약**: AI가 각 논문을 한국어로 요약
 - **이메일 발송**: 구독자들에게 자동 전송
 
----
-
 <div class="footer-info">
   <p>📧 구독 문의: <a href="https://script.google.com/macros/s/AKfycbzcG6pdTr1J-Gxn5tgAyfGsNQz_2-Xhm6EtSmGm9bYHEWgAw6yN7Ew89U92sQeXKaaI/exec">구독 신청하기!</a></p>
   <p>🔗 소스코드: <a href="https://github.com/2shin0/arxiv-ai-mailing">GitHub</a></p>
