@@ -34,15 +34,15 @@
             margin: 0 auto;
             padding: 0 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            height: 60px;
+            height: 65px;
         }
 
         .navbar-nav {
             display: flex;
             list-style: none;
-            gap: 0;
+            gap: 8px;
         }
 
         .nav-item {
@@ -52,13 +52,14 @@
         .nav-link {
             display: flex;
             align-items: center;
-            padding: 15px 25px;
+            gap: 8px;
+            padding: 16px 28px;
             color: white;
             text-decoration: none;
             font-weight: 500;
-            font-size: 16px;
+            font-size: 17px;
             transition: all 0.3s ease;
-            border-radius: 0;
+            border-radius: 8px;
             position: relative;
         }
 
@@ -76,18 +77,27 @@
         .nav-link::after {
             content: '';
             position: absolute;
-            bottom: 0;
+            bottom: 4px;
             left: 50%;
             width: 0;
             height: 3px;
             background: white;
             transition: all 0.3s ease;
             transform: translateX(-50%);
+            border-radius: 2px;
         }
 
         .nav-link:hover::after,
         .nav-link.active::after {
-            width: 80%;
+            width: 70%;
+        }
+
+        /* 브랜드명 스타일 */
+        .navbar-brand {
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 40px;
         }
 
         /* 모바일 메뉴 */
@@ -98,10 +108,26 @@
             color: white;
             font-size: 24px;
             cursor: pointer;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         @media (max-width: 768px) {
+            .navbar-container {
+                height: 60px;
+                justify-content: space-between;
+            }
+
+            .navbar-brand {
+                font-size: 18px;
+                margin-right: 0;
+            }
+
             .navbar-nav {
                 display: none;
                 position: absolute;
@@ -111,6 +137,7 @@
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 flex-direction: column;
                 box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                gap: 0;
             }
 
             .navbar-nav.active {
@@ -118,8 +145,10 @@
             }
 
             .nav-link {
-                padding: 20px 25px;
+                padding: 18px 25px;
                 border-bottom: 1px solid rgba(255,255,255,0.1);
+                border-radius: 0;
+                font-size: 16px;
             }
 
             .nav-link:last-child {
@@ -128,17 +157,6 @@
 
             .mobile-menu-toggle {
                 display: block;
-            }
-
-            .navbar-container {
-                justify-content: space-between;
-            }
-
-            .navbar-brand {
-                color: white;
-                font-weight: bold;
-                font-size: 18px;
-                margin-right: 0;
             }
         }
 
