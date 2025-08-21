@@ -31,7 +31,6 @@
       z-index: 1000;
     }
 
-    /* 항상 가운데 폭 제한 + absolute 기준 */
     .navbar-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -42,13 +41,14 @@
       position: relative;
     }
 
-    /* 기본(navbar-nav) - 전역에선 absolute 주지 않음 */
+    /* nav 기본 */
     .navbar-nav {
       display: flex;
       list-style: none;
       gap: 8px;
+      margin: 0;
+      padding: 0;
     }
-
     .nav-item { position: relative; }
 
     .nav-link {
@@ -63,17 +63,7 @@
       transition: all 0.3s ease;
       border-radius: 8px;
       position: relative;
-    }
-
-    .nav-link:hover {
-      background: rgba(255,255,255,0.15);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .nav-link.active {
-      background: rgba(255,255,255,0.2);
-      color: white;
+      background: transparent; 
     }
 
     .nav-link::after {
@@ -88,9 +78,6 @@
       transform: translateX(-50%);
       border-radius: 2px;
     }
-
-    .nav-link:hover::after,
-    .nav-link.active::after { width: 70%; }
 
     /* 브랜드 */
     .navbar-brand {
@@ -134,7 +121,7 @@
         position: absolute;
         left: 50%;
         top: 50%;
-        transform: translate(-50%, -50%); /* 정확히 중앙 */
+        transform: translate(-50%, -50%); 
         gap: 8px;
       }
     }
@@ -143,7 +130,7 @@
     @media (max-width: 768px) {
       .navbar-container {
         height: 60px;
-        justify-content: space-between; /* 브랜드-버튼 양끝 */
+        justify-content: space-between;
       }
 
       .navbar-brand {
@@ -160,7 +147,7 @@
       }
 
       .navbar-nav {
-        display: none;              /* 토글 전 숨김 */
+        display: none;        
         position: absolute;
         top: 100%;
         left: 0;
@@ -169,7 +156,7 @@
         flex-direction: column;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         gap: 0;
-        transform: none;            /* 중앙 정렬용 transform 해제 */
+        transform: none;   
         z-index: 1001;
       }
 
@@ -274,6 +261,31 @@
       .main-container { margin: 10px; padding: 10px; }
       .container { padding: 20px; }
     }
+
+    /* ===== Hover일 때만 반투명 배경 + 밑줄 ===== */
+    .navbar .nav-link { background: transparent; }
+    .navbar .nav-link::after { width: 0; }
+
+    .navbar .nav-link:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+    .navbar .nav-link:hover::after { width: 70%; }
+
+    /* active는 배경/밑줄 없음 (필요시 글자색만 강조 가능) */
+    .navbar .nav-link.active { background: transparent; }
+    .navbar .nav-link.active::after { width: 0; }
+
+    /* 키보드 접근성 */
+    .navbar .nav-link:focus-visible {
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .navbar .nav-link:focus-visible::after { width: 70%; }
+
+    /* 모바일 터치 피드백(선택) */
+    .navbar .nav-link:active { background: rgba(255,255,255,0.15); }
+    .navbar .nav-link:active::after { width: 70%; }
   </style>
 </head>
 <body>
