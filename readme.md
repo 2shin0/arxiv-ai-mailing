@@ -29,16 +29,18 @@ pip install -r requirements.txt
 ### 3. 환경 변수 설정
 `.env` 파일을 생성하고 다음 내용을 추가하세요:
 ```bash
-# OpenAI API 키 (요약 및 번역용)
-OPENAI_API_KEY=your_openai_api_key_here
+# DeepL API 키 (번역용) - 무료 플랜: 월 50만 자까지 무료
+DEEPL_API_KEY=your_deepl_api_key_here
 
 # Gmail 설정 (이메일 발송용)
-GMAIL_USER=your_gmail@gmail.com
-GMAIL_PASSWORD=your_app_password
+EMAIL_ADDRESS=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
 
 # Google Sheets API (수신자 목록 관리용)
-GOOGLE_SHEETS_CREDENTIALS_PATH=path/to/credentials.json
-GOOGLE_SHEETS_ID=your_google_sheets_id
+GOOGLE_SHEET_NAME=your_google_sheet_name
+GOOGLE_WORKSHEET_NAME=your_worksheet_name
+GOOGLE_API_CREDENTIALS_PATH=path/to/credentials.json
+GOOGLE_SCRIPT_ID=your_google_script_id
 ```
 
 ## 🚀 사용 방법 (Usage)
@@ -187,16 +189,18 @@ pip install -r requirements.txt
 ### 3. Environment Variables Setup
 Create a `.env` file and add the following content:
 ```bash
-# OpenAI API Key (for summarization and translation)
-OPENAI_API_KEY=your_openai_api_key_here
+# DeepL API 키 (for translation) - Free plan: Free up to 500,000 characters per month
+DEEPL_API_KEY=your_deepl_api_key_here
 
-# Gmail Settings (for email sending)
-GMAIL_USER=your_gmail@gmail.com
-GMAIL_PASSWORD=your_app_password
+# Gmail 설정 (for email sending)
+EMAIL_ADDRESS=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
 
 # Google Sheets API (for subscriber list management)
-GOOGLE_SHEETS_CREDENTIALS_PATH=path/to/credentials.json
-GOOGLE_SHEETS_ID=your_google_sheets_id
+GOOGLE_SHEET_NAME=your_google_sheet_name
+GOOGLE_WORKSHEET_NAME=your_worksheet_name
+GOOGLE_API_CREDENTIALS_PATH=path/to/credentials.json
+GOOGLE_SCRIPT_ID=your_google_script_id
 ```
 
 ## 🚀 Usage
