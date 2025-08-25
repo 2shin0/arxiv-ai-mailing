@@ -44,6 +44,7 @@ jobs:
         echo "GOOGLE_SHEET_NAME=${{ secrets.GOOGLE_SHEET_NAME }}" >> $GITHUB_ENV
         echo "GOOGLE_WORKSHEET_NAME=${{ secrets.GOOGLE_WORKSHEET_NAME }}" >> $GITHUB_ENV
         echo "GOOGLE_SCRIPT_ID=${{ secrets.GOOGLE_SCRIPT_ID }}" >> $GITHUB_ENV
+        echo "DEEPL_API_KEY=${{ secrets.DEEPL_API_KEY }}" >> $GITHUB_ENV
     
     - name: Check if already processed today
       id: check_status

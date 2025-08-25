@@ -28,13 +28,16 @@ def summarize_text(text, max_length=100, min_length=30):
 # 번역기 : DeepL 활용, 월 500,000자 제공 (영어 기준)
 def translate_text(text, source_lang="EN", target_lang="KO"):
     url = "https://api-free.deepl.com/v2/translate"
+    headers = {
+        "Authorization": f"DeepL-Auth-Key {DEEPL_API_KEY}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
     params = {
-        "auth_key": DEEPL_API_KEY,
         "text": text[:512],  
         "source_lang": source_lang,
         "target_lang": target_lang
     }
-    response = requests.post(url, data=params)
+    response = requests.post(url, headers=headers, data=params)
     if response.status_code == 200:
         return response.json()["translations"][0]["text"]
     else:
