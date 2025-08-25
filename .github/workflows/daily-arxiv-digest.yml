@@ -1,0 +1,192 @@
+name: Daily arXiv AI Papers Digest
+
+on:
+  schedule:
+    # 월-금 오전 10시 (KST) = UTC 오전 1시 실행
+    - cron: '0 1 * * 1-5'
+    # 재시도: 오전 11시 (KST) = UTC 오전 2시
+    - cron: '0 2 * * 1-5'
+    # 재시도: 오후 12시 (KST) = UTC 오전 3시
+    - cron: '0 3 * * 1-5'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  generate-and-send-digest:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Create Google API credentials file
+      run: |
+        echo '${{ secrets.GOOGLE_API_CREDENTIALS }}' > google_credentials.json
+        echo "GOOGLE_API_CREDENTIALS_PATH=google_credentials.json" >> $GITHUB_ENV
+    
+    - name: Set environment variables
+      run: |
+        echo "EMAIL_ADDRESS=${{ secrets.EMAIL_ADDRESS }}" >> $GITHUB_ENV
+        echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> $GITHUB_ENV
+        echo "RECIPIENT=${{ secrets.RECIPIENT }}" >> $GITHUB_ENV
+        echo "GOOGLE_SHEET_NAME=${{ secrets.GOOGLE_SHEET_NAME }}" >> $GITHUB_ENV
+        echo "GOOGLE_WORKSHEET_NAME=${{ secrets.GOOGLE_WORKSHEET_NAME }}" >> $GITHUB_ENV
+        echo "GOOGLE_SCRIPT_ID=${{ secrets.GOOGLE_SCRIPT_ID }}" >> $GITHUB_ENV
+    
+    - name: Check if already processed today
+      id: check_status
+      run: |
+        # 오늘 날짜 확인
+        TODAY=$(date +'%Y-%m-%d')
+        echo "today=$TODAY" >> $GITHUB_OUTPUT
+        
+        # 이미 처리된 파일이 있는지 확인
+        if [ -f "results/${TODAY}_digest.json" ] || [ -f "digest/ALL/${TODAY}.md" ]; then
+          echo "already_processed=true" >> $GITHUB_OUTPUT
+          echo "✅ Today's digest already exists. Skipping execution."
+        else
+          echo "already_processed=false" >> $GITHUB_OUTPUT
+          echo "📝 No digest found for today. Proceeding with execution."
+        fi
+    
+    - name: Run arXiv digest generation
+      id: run_digest
+      if: steps.check_status.outputs.already_processed == 'false'
+      run: |
+        echo "🚀 Starting arXiv digest generation..."
+        
+        # 실행 시작 시간 기록
+        START_TIME=$(date +'%Y-%m-%d %H:%M:%S')
+        echo "start_time=$START_TIME" >> $GITHUB_OUTPUT
+        
+        # main.py 실행 및 결과 캡처
+        if python main.py > execution.log 2>&1; then
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✅ Digest generation completed successfully"
+          
+          # 생성된 논문 수 확인 (더 안정적인 방법)
+          PAPER_COUNT=$(grep -E "Total papers found: [0-9]+" execution.log | tail -1 | grep -oE "[0-9]+" || echo "0")
+          echo "paper_count=$PAPER_COUNT" >> $GITHUB_OUTPUT
+          echo "📊 Papers processed: $PAPER_COUNT"
+          
+          # 논문이 없는 경우 경고 표시
+          if [ "$PAPER_COUNT" -eq "0" ]; then
+            echo "⚠️ Warning: No papers found for today"
+            echo "warning=no_papers_found" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Successfully processed $PAPER_COUNT papers"
+          fi
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+          echo "❌ Digest generation failed"
+          
+          # 에러 로그 출력
+          echo "=== ERROR LOG ==="
+          cat execution.log
+          echo "================="
+          
+          # 실패 이유 분석 (더 정확한 패턴 매칭)
+          if grep -qE "(No papers found|0 papers)" execution.log; then
+            echo "error_reason=no_papers_available" >> $GITHUB_OUTPUT
+          elif grep -qE "(Failed to fetch|Connection|Network|HTTP)" execution.log; then
+            echo "error_reason=network_error" >> $GITHUB_OUTPUT
+          elif grep -qE "(API|Authentication|Credentials)" execution.log; then
+            echo "error_reason=api_error" >> $GITHUB_OUTPUT
+          elif grep -qE "(Permission|Access)" execution.log; then
+            echo "error_reason=permission_error" >> $GITHUB_OUTPUT
+          else
+            echo "error_reason=unknown_error" >> $GITHUB_OUTPUT
+          fi
+          
+          exit 1
+        fi
+    
+    - name: Configure Git
+      if: steps.run_digest.outputs.success == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Deploy to GitHub Pages
+      if: steps.run_digest.outputs.success == 'true'
+      id: deploy
+      run: |
+        echo "📤 Deploying to GitHub Pages..."
+        
+        # arxiv-digest 브랜치로 전환하여 다이제스트 파일들 커밋
+        git checkout -B arxiv-digest
+        git add digest/
+        git add results/
+        
+        # 변경사항이 있는 경우에만 커밋
+        if ! git diff --staged --quiet; then
+          git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }} (Papers: ${{ steps.run_digest.outputs.paper_count }})"
+          git push origin arxiv-digest --force
+          echo "digest_deployed=true" >> $GITHUB_OUTPUT
+        else
+          echo "digest_deployed=false" >> $GITHUB_OUTPUT
+          echo "⚠️ No changes to deploy in digest branch"
+        fi
+        
+        # main 브랜치로 전환하여 인덱스 파일들 업데이트
+        git checkout main
+        git add LLM/index.md ALL/index.md
+        
+        # 변경사항이 있는 경우에만 커밋
+        if ! git diff --staged --quiet; then
+          git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
+          git push origin main
+          echo "index_deployed=true" >> $GITHUB_OUTPUT
+        else
+          echo "index_deployed=false" >> $GITHUB_OUTPUT
+          echo "⚠️ No changes to deploy in main branch"
+        fi
+    
+    - name: Create execution summary
+      if: always()
+      run: |
+        echo "## 📊 Execution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Date**: ${{ steps.check_status.outputs.today }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Time**: $(date +'%H:%M:%S KST')" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.check_status.outputs.already_processed }}" == "true" ]; then
+          echo "- **Status**: ⏭️ Skipped (already processed)" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.run_digest.outputs.success }}" == "true" ]; then
+          echo "- **Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Papers Found**: ${{ steps.run_digest.outputs.paper_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Digest Deployed**: ${{ steps.deploy.outputs.digest_deployed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Index Updated**: ${{ steps.deploy.outputs.index_deployed }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.run_digest.outputs.warning }}" == "no_papers_found" ]; then
+            echo "- **Warning**: ⚠️ No papers found for today" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "- **Status**: ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Error Reason**: ${{ steps.run_digest.outputs.error_reason }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Next Retry**: $(date -d '+1 hour' +'%H:%M KST')" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Upload execution log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: execution-log-${{ steps.check_status.outputs.today }}
+        path: execution.log
+        retention-days: 7
+    
+    - name: Clean up credentials
+      if: always()
+      run: |
+        rm -f google_credentials.json

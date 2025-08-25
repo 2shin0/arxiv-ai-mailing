@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
 import re
 import time
+import pytz
 
 headers = {
     "User-Agent": "Mozilla/5.0 (compatible; ArxivPaperFetcher/1.0; +https://github.com/2shin0/arxiv-ai-mailing/tree/main)"
@@ -11,24 +12,26 @@ headers = {
 ARXIV_BASE_URL = "https://arxiv.org/list/cs.AI/recent"
 
 def fetch_recent_ai_papers(max_pages=10):
-    """여러 페이지를 크롤링하여 어제 등록된 모든 논문을 가져옵니다.
+    """날짜 헤더를 기준으로 오늘 공개된 논문을 효율적으로 가져옵니다.
     
     Args:
         max_pages (int): 크롤링할 최대 페이지 수 (기본값: 10)
         
     Returns:
-        list: 어제 등록된 논문 목록
+        list: 오늘 공개된 논문 목록
     """
     print("[INFO] Fetching arXiv recent cs.AI papers...")
     
     all_papers = []
-    found_target_date = False
     
-    # 어제 날짜 (UTC 기준)
-    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
-    # 테스트용 고정 날짜 (필요시 사용)
-    # yesterday = datetime(2025, 7, 28, tzinfo=timezone.utc)
-    print(f"[INFO] Filtering papers submitted on: {yesterday.strftime('%Y-%m-%d')}")
+    # 오늘 날짜 (ET 기준) - arXiv는 ET 기준으로 운영
+    # EST/EDT 자동 처리
+    utc_now = datetime.now(timezone.utc)
+    et_tz = pytz.timezone('US/Eastern')
+    et_now = utc_now.astimezone(et_tz)
+    target_date = et_now.date()
+    
+    print(f"[INFO] Looking for papers announced on: {target_date.strftime('%Y-%m-%d')} (ET)")
     
     for page in range(max_pages):
         skip = page * 50
@@ -44,16 +47,13 @@ def fetch_recent_ai_papers(max_pages=10):
             # 서버 부하 방지를 위한 대기
             time.sleep(1)
             
-            page_papers = parse_arxiv_page(response.text, yesterday)
+            page_papers, should_continue = parse_arxiv_page_by_date_header(response.text, target_date)
             all_papers.extend(page_papers)
             
-            # 이전 날짜의 논문이 나오기 시작하면 중단 (최적화)
-            if len(page_papers) == 0 and found_target_date:
-                print(f"[INFO] No more papers found for target date. Stopping at page {page+1}.")
+            # 오늘 날짜 섹션이 끝나면 중단
+            if not should_continue:
+                print(f"[INFO] Finished processing today's papers. Stopping at page {page+1}.")
                 break
-                
-            if len(page_papers) > 0:
-                found_target_date = True
                 
         except Exception as e:
             print(f"[ERROR] Exception occurred while processing page {page+1}: {e}")
@@ -62,85 +62,136 @@ def fetch_recent_ai_papers(max_pages=10):
     return all_papers
 
 
-def parse_arxiv_page(html_content, target_date):
-
-    soup = BeautifulSoup(html_content, "html.parser")
+def parse_arxiv_page_by_date_header(html_content, target_date):
+    """날짜 헤더를 기준으로 논문을 파싱합니다.
     
+    Args:
+        html_content (str): HTML 내용
+        target_date (date): 찾고자 하는 날짜
+        
+    Returns:
+        tuple: (논문 목록, 계속 처리할지 여부)
+    """
+    soup = BeautifulSoup(html_content, "html.parser")
     papers = []
-    total_checked = 0
+    should_continue = True
+    current_date_section = None
+    
+    # 모든 요소를 순차적으로 처리
+    content_div = soup.find('div', id='dlpage')
+    if not content_div:
+        print("[WARN] Could not find main content div")
+        return papers, False
+    
+    elements = content_div.find_all(['h3', 'dt', 'dd'])
+    
+    i = 0
+    while i < len(elements):
+        element = elements[i]
+        
+        # 날짜 헤더 확인
+        if element.name == 'h3':
+            date_text = element.get_text().strip()
+            print(f"[DEBUG] Found date header: {date_text}")
+            
+            # 날짜 파싱 (예: "Mon, 25 Aug 2025 (showing first 50 of 143 entries)")
+            try:
+                # 날짜 부분만 추출
+                date_match = re.search(r'(\w+,\s+\d+\s+\w+\s+\d+)', date_text)
+                if date_match:
+                    date_str = date_match.group(1)
+                    # "Mon, 25 Aug 2025" -> datetime
+                    parsed_date = datetime.strptime(date_str, '%a, %d %b %Y').date()
+                    current_date_section = parsed_date
+                    print(f"[DEBUG] Parsed date: {parsed_date}")
+                    
+                    # 오늘 날짜가 아닌 이전 날짜 섹션이 나오면 중단
+                    if parsed_date < target_date:
+                        print(f"[INFO] Reached older date section ({parsed_date}). Stopping.")
+                        should_continue = False
+                        break
+                        
+            except Exception as e:
+                print(f"[WARN] Failed to parse date header '{date_text}': {e}")
+        
+        # dt, dd 쌍으로 논문 정보 처리
+        elif element.name == 'dt' and i + 1 < len(elements) and elements[i + 1].name == 'dd':
+            # 현재 날짜 섹션이 오늘 날짜인 경우에만 논문 추가
+            if current_date_section == target_date:
+                dt_element = element
+                dd_element = elements[i + 1]
+                
+                paper = parse_single_paper(dt_element, dd_element)
+                if paper:
+                    papers.append(paper)
+                    print(f"[INFO] Added: {paper['title']}")
+            
+            i += 1  # dd 요소도 건너뛰기
+        
+        i += 1
+    
+    print(f"[INFO] Papers found in this page: {len(papers)}")
+    return papers, should_continue
 
-    for i, (dt, dd) in enumerate(zip(soup.find_all('dt'), soup.find_all('dd'))):
-        print(f"[STEP] Processing entry {i+1}")
-        a_tag = dt.find('a', href=re.compile(r"^/abs/"))
+
+def parse_single_paper(dt_element, dd_element):
+    """개별 논문 정보를 파싱합니다."""
+    try:
+        # arXiv ID 및 URL 추출
+        a_tag = dt_element.find('a', href=re.compile(r"^/abs/"))
         if not a_tag:
-            print("[WARN] Skipping entry without valid abstract link.")
-            continue
-
+            return None
+            
         abstract_url = "https://arxiv.org" + a_tag['href']
-        print(f"[INFO] Abstract URL: {abstract_url}")
-
-        title_tag = dd.find('div', class_='list-title')
-        authors_tag = dd.find('div', class_='list-authors')
+        
+        # 제목과 저자 추출
+        title_tag = dd_element.find('div', class_='list-title')
+        authors_tag = dd_element.find('div', class_='list-authors')
+        
         if not title_tag or not authors_tag:
-            print("[WARN] Missing title or authors.")
-            continue
-
+            return None
+            
         title = title_tag.text.replace("Title:", "").strip()
         authors = authors_tag.text.replace("Authors:", "").strip()
+        
+        # 초록은 개별 페이지에서 가져오기 (필요시)
+        abstract = get_abstract_from_url(abstract_url)
+        
+        return {
+            "title": title,
+            "authors": authors,
+            "abstract": abstract,
+            "url": abstract_url
+        }
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to parse paper: {e}")
+        return None
 
-        try:
-            print(f"[INFO] Fetching abstract page for: {title}")
-            abs_response = requests.get(abstract_url)
-            if abs_response.status_code != 200:
-                print(f"[ERROR] Failed to fetch abstract page for {title}. Status: {abs_response.status_code}")
-                continue
 
-            abs_soup = BeautifulSoup(abs_response.text, "html.parser")
-            dateline = abs_soup.find('div', class_='dateline')
-            if not dateline:
-                print(f"[WARN] No dateline found for: {title}")
-                continue
+def get_abstract_from_url(abstract_url):
+    """개별 논문 페이지에서 초록을 가져옵니다."""
+    try:
+        response = requests.get(abstract_url, headers=headers)
+        if response.status_code != 200:
+            return "Abstract not available"
+            
+        soup = BeautifulSoup(response.text, "html.parser")
+        abstract_tag = soup.find('blockquote', class_='abstract')
+        
+        if abstract_tag:
+            return abstract_tag.text.replace("Abstract:", "").strip()
+        else:
+            return "Abstract not available"
+            
+    except Exception as e:
+        print(f"[WARN] Failed to fetch abstract from {abstract_url}: {e}")
+        return "Abstract not available"
 
-            submitted_text = dateline.text.strip()
-            print(f"[DEBUG] {title} | {submitted_text}")
-
-            try:
-                submitted_text = submitted_text.strip('[]').replace('Submitted on ', '').strip()
-                submitted_dt = datetime.strptime(submitted_text, '%d %b %Y')
-                print(f"[DEBUG] Parsed date: {submitted_dt.date()} vs {target_date.date()}")
-                if submitted_dt.date() != target_date.date():
-                    print(f"[INFO] Skipping {title}, not submitted on target date.")
-                    continue
-            except Exception as e:
-                print(f"[WARN] Failed to parse date for {title}: {e}")
-                continue
-
-            abstract_tag = abs_soup.find('blockquote', class_='abstract')
-            if not abstract_tag:
-                print(f"[WARN] No abstract block found for: {title}")
-                continue
-
-            abstract = abstract_tag.text.replace("Abstract:", "").strip()
-
-            papers.append({
-                "title": title,
-                "authors": authors,
-                "abstract": abstract,
-                "url": abstract_url
-            })
-            print(f"[INFO] Added: {title}")
-
-        except Exception as e:
-            print(f"[ERROR] Exception occurred while processing {abstract_url}: {e}")
-
-        total_checked += 1
-
-    print(f"[INFO] Total papers checked: {total_checked}, matched: {len(papers)}")
-    return papers
 
 if __name__ == "__main__":
-    yesterday_papers = fetch_recent_ai_papers()
-    for paper in yesterday_papers:
+    today_papers = fetch_recent_ai_papers()
+    for paper in today_papers:
         print(paper['title'])
         print(paper['authors'])
         print(paper['abstract'][:200] + "...")
