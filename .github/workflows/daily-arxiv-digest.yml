@@ -52,15 +52,15 @@ jobs:
         # 성공적으로 처리된 파일이 있는지 확인
         if [ -f "results/${TODAY}_digest.json" ] && [ -f "digest/ALL/${TODAY}.md" ]; then
           # JSON 파일에서 논문 수 확인
-          PAPER_COUNT=$(python -c "
-import json, os
-try:
-    with open('results/${TODAY}_digest.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    print(len(data.get('papers', [])))
-except:
-    print('0')
-" 2>/dev/null || echo "0")
+          PAPER_COUNT=$(python -c | 
+            import json, os
+            try:
+                with open('results/${TODAY}_digest.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                print(len(data.get('papers', [])))
+            except:
+                print('0')
+          2>/dev/null || echo "0")
           
           if [ "$PAPER_COUNT" -gt "0" ]; then
             echo "already_processed=true" >> $GITHUB_OUTPUT
