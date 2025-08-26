@@ -157,15 +157,7 @@ jobs:
         git checkout main
         
         # 인덱스 페이지 업데이트 (Python으로 직접 실행)
-        python -c "
-from exporter import update_all_indexes
-import os
-if os.path.exists('digest'):
-    update_all_indexes()
-    print('Index pages updated successfully')
-else:
-    print('Digest directory not found')
-"
+        python -c "from exporter import update_all_indexes; import os; update_all_indexes() if os.path.exists('digest') else print('Digest directory not found'); print('Index pages updated successfully') if os.path.exists('digest') else None"
         
         git add LLM/index.md ALL/index.md
         
