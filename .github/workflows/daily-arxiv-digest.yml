@@ -140,6 +140,18 @@ jobs:
         
         # main 브랜치로 전환하여 인덱스 파일들 업데이트
         git checkout main
+        
+        # 인덱스 페이지 업데이트 (Python으로 직접 실행)
+        python -c "
+from exporter import update_all_indexes
+import os
+if os.path.exists('digest'):
+    update_all_indexes()
+    print('✅ Index pages updated successfully')
+else:
+    print('⚠️ Digest directory not found')
+"
+        
         git add LLM/index.md ALL/index.md
         
         # 변경사항이 있는 경우에만 커밋
