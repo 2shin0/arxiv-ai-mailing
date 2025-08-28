@@ -2,8 +2,12 @@ name: Daily arXiv AI Papers Digest
 
 on:
   schedule:
-    # 월-금 KST 오전 10시 (UTC 01시) 실행
-    - cron: '0 1 * * 1-5'
+    # 9시 30분부터 30분 간격으로 5번 실행 (KST = UTC+9)
+    - cron: '30 0 * * 1-5'  # 9:30 KST (UTC 00:30)
+    - cron: '0 1 * * 1-5'   # 10:00 KST (UTC 01:00)
+    - cron: '30 1 * * 1-5'  # 10:30 KST (UTC 01:30)
+    - cron: '0 2 * * 1-5'   # 11:00 KST (UTC 02:00)
+    - cron: '30 2 * * 1-5'  # 11:30 KST (UTC 02:30)
   workflow_dispatch: # 수동 실행 가능
 
 jobs:
@@ -98,6 +102,26 @@ jobs:
           if [ "$PAPER_COUNT" -eq "0" ]; then
             echo "Warning: No papers found for today"
             echo "warning=no_papers_found" >> $GITHUB_OUTPUT
+            
+            # 현재 시간 확인하여 다음 재시도 시간 계산
+            CURRENT_HOUR=$(date +'%H')
+            CURRENT_MIN=$(date +'%M')
+            
+            # 다음 실행 시간 계산 (KST 기준)
+            if [ "$CURRENT_HOUR" -eq "9" ] && [ "$CURRENT_MIN" -ge "30" ]; then
+              NEXT_TIME="10:00"
+            elif [ "$CURRENT_HOUR" -eq "10" ] && [ "$CURRENT_MIN" -lt "30" ]; then
+              NEXT_TIME="10:30"
+            elif [ "$CURRENT_HOUR" -eq "10" ] && [ "$CURRENT_MIN" -ge "30" ]; then
+              NEXT_TIME="11:00"
+            elif [ "$CURRENT_HOUR" -eq "11" ] && [ "$CURRENT_MIN" -lt "30" ]; then
+              NEXT_TIME="11:30"
+            else
+              NEXT_TIME="tomorrow 9:30"
+            fi
+            
+            echo "No papers available. Will retry at $NEXT_TIME KST"
+            echo "next_retry_time=$NEXT_TIME" >> $GITHUB_OUTPUT
           else
             echo "Successfully processed $PAPER_COUNT papers"
           fi
@@ -140,8 +164,22 @@ jobs:
         
         # arxiv-digest 브랜치로 전환하여 다이제스트 파일들 커밋
         git checkout -B arxiv-digest
-        git add digest/
-        git add results/
+        
+        # digest 폴더가 존재하는 경우에만 추가
+        if [ -d "digest" ]; then
+          git add digest/
+          echo "Added digest folder"
+        else
+          echo "Warning: digest folder not found"
+        fi
+        
+        # results 폴더가 존재하는 경우에만 추가
+        if [ -d "results" ]; then
+          git add results/
+          echo "Added results folder"
+        else
+          echo "Warning: results folder not found"
+        fi
         
         # 변경사항이 있는 경우에만 커밋
         if ! git diff --staged --quiet; then
@@ -157,9 +195,31 @@ jobs:
         git checkout main
         
         # 인덱스 페이지 업데이트 (Python으로 직접 실행)
-        python -c "from exporter import update_all_indexes; import os; update_all_indexes() if os.path.exists('digest') else print('Digest directory not found'); print('Index pages updated successfully') if os.path.exists('digest') else None"
+        if [ -d "digest" ]; then
+          python -c "
+            from exporter import update_all_indexes
+            import os
+            try:
+                update_all_indexes()
+                print('Index pages updated successfully')
+            except Exception as e:
+                print(f'Error updating indexes: {e}')
+                exit(1)
+          "
+        else
+          echo "Skipping index update - digest directory not found"
+        fi
         
-        git add LLM/index.md ALL/index.md
+        # 인덱스 파일들이 존재하는 경우에만 추가
+        if [ -f "LLM/index.md" ]; then
+          git add LLM/index.md
+          echo "Added LLM/index.md"
+        fi
+        
+        if [ -f "ALL/index.md" ]; then
+          git add ALL/index.md  
+          echo "Added ALL/index.md"
+        fi
         
         # 변경사항이 있는 경우에만 커밋
         if ! git diff --staged --quiet; then
@@ -171,8 +231,38 @@ jobs:
           echo "No changes to deploy in main branch"
         fi
     
-    - name: Send email digest
+    - name: Wait for GitHub Pages deployment
       if: steps.run_digest.outputs.success == 'true' && (steps.deploy.outputs.digest_deployed == 'true' || steps.deploy.outputs.index_deployed == 'true')
+      id: wait_pages
+      run: |
+        echo "Waiting for GitHub Pages deployment to complete..."
+        
+        # GitHub Pages 배포 완료까지 최대 5분 대기
+        MAX_WAIT=300  # 5분
+        WAIT_TIME=0
+        SLEEP_INTERVAL=15  # 15초마다 확인
+        
+        while [ $WAIT_TIME -lt $MAX_WAIT ]; do
+          echo "Checking deployment status... (${WAIT_TIME}s elapsed)"
+          
+          # GitHub Pages 상태 확인 (curl로 사이트 접근 테스트)
+          if curl -s -o /dev/null -w "%{http_code}" "https://2shin0.github.io/arxiv-ai-mailing/" | grep -q "200"; then
+            echo "GitHub Pages deployment completed successfully!"
+            echo "pages_ready=true" >> $GITHUB_OUTPUT
+            break
+          fi
+          
+          sleep $SLEEP_INTERVAL
+          WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
+        done
+        
+        if [ $WAIT_TIME -ge $MAX_WAIT ]; then
+          echo "Timeout waiting for GitHub Pages deployment"
+          echo "pages_ready=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Send email digest
+      if: steps.run_digest.outputs.success == 'true' && (steps.deploy.outputs.digest_deployed == 'true' || steps.deploy.outputs.index_deployed == 'true') && steps.wait_pages.outputs.pages_ready == 'true'
       id: send_email
       run: |
         echo "Sending email digest..."
@@ -202,15 +292,31 @@ jobs:
           echo "- **Papers Found**: ${{ steps.run_digest.outputs.paper_count }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Digest Deployed**: ${{ steps.deploy.outputs.digest_deployed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Index Updated**: ${{ steps.deploy.outputs.index_deployed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pages Ready**: ${{ steps.wait_pages.outputs.pages_ready }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Email Sent**: ${{ steps.send_email.outputs.email_sent }}" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ steps.run_digest.outputs.warning }}" == "no_papers_found" ]; then
-            echo "- **Warning**: Warning: No papers found for today" >> $GITHUB_STEP_SUMMARY
+            echo "- **Warning**: No papers found for today" >> $GITHUB_STEP_SUMMARY
+            echo "- **Next Retry**: ${{ steps.run_digest.outputs.next_retry_time }} KST" >> $GITHUB_STEP_SUMMARY
           fi
         else
           echo "- **Status**: Failed" >> $GITHUB_STEP_SUMMARY
           echo "- **Error Reason**: ${{ steps.run_digest.outputs.error_reason }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Next Retry**: $(date -d '+1 hour' +'%H:%M KST')" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # 배포 실패 시 재시도 알림
+        if [ "${{ steps.run_digest.outputs.success }}" == "true" ] && [ "${{ steps.deploy.outputs.digest_deployed }}" != "true" ] && [ "${{ steps.deploy.outputs.index_deployed }}" != "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Deployment Failed**: Email not sent. Will retry at next scheduled time." >> $GITHUB_STEP_SUMMARY
+          echo "- **Retry Schedule**: Next execution at $(date -d 'tomorrow' +'%Y-%m-%d') 10:00 KST" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # GitHub Pages 배포 대기 타임아웃 시 알림
+        if [ "${{ steps.wait_pages.outputs.pages_ready }}" == "false" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Pages Deployment Timeout**: Email not sent due to deployment delay." >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Pages may still be deploying. Check manually." >> $GITHUB_STEP_SUMMARY
         fi
     
     - name: Upload execution log
