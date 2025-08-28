@@ -52,7 +52,7 @@ jobs:
         # 성공적으로 처리된 파일이 있는지 확인
         if [ -f "results/${TODAY}_digest.json" ] && [ -f "digest/ALL/${TODAY}.md" ]; then
           # JSON 파일에서 논문 수 확인
-          PAPER_COUNT=$(python -c | 
+          PAPER_COUNT=$(python -c "
             import json, os
             try:
                 with open('results/${TODAY}_digest.json', 'r', encoding='utf-8') as f:
@@ -60,7 +60,7 @@ jobs:
                 print(len(data.get('papers', [])))
             except:
                 print('0')
-          2>/dev/null || echo "0")
+          " 2>/dev/null || echo "0")
           
           if [ "$PAPER_COUNT" -gt "0" ]; then
             echo "already_processed=true" >> $GITHUB_OUTPUT
@@ -171,6 +171,23 @@ jobs:
           echo "No changes to deploy in main branch"
         fi
     
+    - name: Send email digest
+      if: steps.run_digest.outputs.success == 'true' && (steps.deploy.outputs.digest_deployed == 'true' || steps.deploy.outputs.index_deployed == 'true')
+      id: send_email
+      run: |
+        echo "Sending email digest..."
+        
+        if python send_digest.py > email.log 2>&1; then
+          echo "email_sent=true" >> $GITHUB_OUTPUT
+          echo "Email sent successfully"
+        else
+          echo "email_sent=false" >> $GITHUB_OUTPUT
+          echo "Failed to send email"
+          echo "=== EMAIL ERROR LOG ==="
+          cat email.log
+          echo "======================="
+        fi
+    
     - name: Create execution summary
       if: always()
       run: |
@@ -185,6 +202,7 @@ jobs:
           echo "- **Papers Found**: ${{ steps.run_digest.outputs.paper_count }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Digest Deployed**: ${{ steps.deploy.outputs.digest_deployed }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Index Updated**: ${{ steps.deploy.outputs.index_deployed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Email Sent**: ${{ steps.send_email.outputs.email_sent }}" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ steps.run_digest.outputs.warning }}" == "no_papers_found" ]; then
             echo "- **Warning**: Warning: No papers found for today" >> $GITHUB_STEP_SUMMARY
@@ -201,6 +219,14 @@ jobs:
       with:
         name: execution-log-${{ steps.check_status.outputs.today }}
         path: execution.log
+        retention-days: 7
+    
+    - name: Upload email log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: email-log-${{ steps.check_status.outputs.today }}
+        path: email.log
         retention-days: 7
     
     - name: Clean up credentials
