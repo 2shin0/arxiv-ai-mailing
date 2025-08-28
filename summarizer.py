@@ -3,11 +3,9 @@ from transformers import pipeline
 from dotenv import load_dotenv
 import os
 
-# .env 파일에서 API 키 로딩
 load_dotenv()
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 
-# 사전 학습된 요약 모델
 tokenizer = "t5-small"
 model = "t5-small"
 summarizer = pipeline("summarization", model=model, tokenizer=tokenizer)
@@ -25,7 +23,6 @@ def summarize_text(text, max_length=100, min_length=30):
     )
     return summary[0]['summary_text']
 
-# 번역기 : DeepL 활용, 월 500,000자 제공 (영어 기준)
 def translate_text(text, source_lang="EN", target_lang="KO"):
     url = "https://api-free.deepl.com/v2/translate"
     params = {

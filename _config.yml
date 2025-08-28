@@ -1,18 +1,14 @@
-# Site settings
 title: "ArXiv AI Digest"
 description: "매일 업데이트되는 최신 AI 논문 다이제스트"
 baseurl: "/arxiv-ai-mailing"
 url: "https://2shin0.github.io"
 
-# Build settings
 markdown: kramdown
 highlighter: rouge
 
-# Jekyll configuration
 plugins:
   - jekyll-feed
 
-# Collections
 collections:
   llm_papers:
     output: true
@@ -21,7 +17,6 @@ collections:
     output: true
     permalink: /ALL/:name/
 
-# Include/Exclude files
 include:
   - LLM/
   - ALL/
@@ -37,7 +32,6 @@ exclude:
   - .gitattributes
   - readme.md
 
-# Defaults
 defaults:
   - scope:
       path: ""

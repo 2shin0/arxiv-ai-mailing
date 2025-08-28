@@ -7,7 +7,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config import EMAIL_ADDRESS, EMAIL_PASSWORD, GOOGLE_SHEET_NAME, GOOGLE_WORKSHEET_NAME, GOOGLE_API_CREDENTIALS_PATH, GOOGLE_SCRIPT_ID
 
-# 오프라인 모드 설정
 OFFLINE_MODE = os.environ.get('OFFLINE_MODE', 'False').lower() in ('true', '1', 't')
 if '--offline' in sys.argv:
     OFFLINE_MODE = True
@@ -15,7 +14,6 @@ if '--offline' in sys.argv:
 def get_recipients_from_sheet():
     """Google Sheets에서 수신자 이메일 목록을 가져옵니다."""
     try:
-        # 권한 범위 확장 - 읽기 전용과 드라이브 권한 추가
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets.readonly",
             "https://www.googleapis.com/auth/drive.readonly"
@@ -24,9 +22,7 @@ def get_recipients_from_sheet():
         client = gspread.authorize(creds)
 
         sheet = client.open(GOOGLE_SHEET_NAME).worksheet(GOOGLE_WORKSHEET_NAME)
-        # 첫 번째 열(A열)의 모든 값을 가져옵니다.
         recipients = sheet.col_values(1)
-        # 헤더(첫 번째 행)가 있다면 제외합니다.
         if recipients and '@' not in recipients[0]:
             return recipients[1:]
         return recipients
@@ -41,7 +37,6 @@ def get_recipients_from_sheet():
         return []
 
 def send_email(subject, body):
-    # 오프라인 모드: 이메일 출력만
     if OFFLINE_MODE:
         print("\n[오프라인 모드] 이메일 전송을 건너뜁니다.")
         print(f"제목: {subject}")
@@ -49,12 +44,9 @@ def send_email(subject, body):
         print(body[:200] + "..." if len(body) > 200 else body)
         return True
 
-    # 이메일 설정 확인
     if not all([EMAIL_ADDRESS, EMAIL_PASSWORD]):
         print("\n[오류] 이메일 설정이 완료되지 않았습니다. .env 파일을 확인하세요.")
         return False
-
-    # Google Sheets에서 수신자 목록 가져오기
     recipients = get_recipients_from_sheet()
     if not recipients:
         print("\n[정보] 전송할 수신자가 없습니다. Google Sheets 설정을 확인하세요.")
@@ -75,9 +67,7 @@ def send_email(subject, body):
                 msg['To'] = recipient
                 msg['Subject'] = subject
 
-                # HTML 본문 생성
                 body_html = body.replace('\n', '<br>')
-                # 구독 해지 URL 생성
                 unsubscribe_url = f"https://script.google.com/macros/s/{GOOGLE_SCRIPT_ID}/exec?action=unsubscribe&email={recipient}"
                 
                 html_body = f"""

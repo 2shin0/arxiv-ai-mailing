@@ -2,13 +2,17 @@ name: Daily arXiv AI Papers Digest
 
 on:
   schedule:
-    # 9시 30분부터 30분 간격으로 5번 실행 (KST = UTC+9)
     - cron: '30 0 * * 1-5'  # 9:30 KST (UTC 00:30)
     - cron: '0 1 * * 1-5'   # 10:00 KST (UTC 01:00)
     - cron: '30 1 * * 1-5'  # 10:30 KST (UTC 01:30)
     - cron: '0 2 * * 1-5'   # 11:00 KST (UTC 02:00)
     - cron: '30 2 * * 1-5'  # 11:30 KST (UTC 02:30)
-  workflow_dispatch: # 수동 실행 가능
+  workflow_dispatch: 
+
+# 동시 실행 방지 설정
+concurrency:
+  group: arxiv-digest-${{ github.ref }}
+  cancel-in-progress: false 
 
 jobs:
   generate-and-send-digest:
