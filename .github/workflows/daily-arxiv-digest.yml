@@ -201,14 +201,14 @@ jobs:
         # 인덱스 페이지 업데이트 (Python으로 직접 실행)
         if [ -d "digest" ]; then
           python -c "
-            from exporter import update_all_indexes
-            import os
-            try:
-                update_all_indexes()
-                print('Index pages updated successfully')
-            except Exception as e:
-                print(f'Error updating indexes: {e}')
-                exit(1)
+from exporter import update_all_indexes
+import os
+try:
+    update_all_indexes()
+    print('Index pages updated successfully')
+except Exception as e:
+    print(f'Error updating indexes: {e}')
+    exit(1)
           "
         else
           echo "Skipping index update - digest directory not found"
@@ -249,8 +249,10 @@ jobs:
         while [ $WAIT_TIME -lt $MAX_WAIT ]; do
           echo "Checking deployment status... (${WAIT_TIME}s elapsed)"
           
-          # GitHub Pages 상태 확인 (curl로 사이트 접근 테스트)
-          if curl -s -o /dev/null -w "%{http_code}" "https://2shin0.github.io/arxiv-ai-mailing/" | grep -q "200"; then
+          # GitHub Pages 상태 확인 (오늘 날짜의 다이제스트 파일이 실제로 배포되었는지 확인)
+          TODAY_FILE_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${{ steps.check_status.outputs.today }}"
+          echo "Checking for file at: $TODAY_FILE_URL"
+          if curl -s -o /dev/null -w "%{http_code}" "$TODAY_FILE_URL" | grep -q "200"; then
             echo "GitHub Pages deployment completed successfully!"
             echo "pages_ready=true" >> $GITHUB_OUTPUT
             break
