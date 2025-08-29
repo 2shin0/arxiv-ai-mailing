@@ -200,16 +200,7 @@ jobs:
         
         # 인덱스 페이지 업데이트 (Python으로 직접 실행)
         if [ -d "digest" ]; then
-          python -c "
-from exporter import update_all_indexes
-import os
-try:
-    update_all_indexes()
-    print('Index pages updated successfully')
-except Exception as e:
-    print(f'Error updating indexes: {e}')
-    exit(1)
-          "
+          python -c "from exporter import update_all_indexes; import os; update_all_indexes(); print('Index pages updated successfully')"
         else
           echo "Skipping index update - digest directory not found"
         fi
