@@ -225,9 +225,16 @@ jobs:
           echo "index_deployed=false" >> $GITHUB_OUTPUT
           echo "No changes to deploy in main branch"
         fi
+        
+        # 인덱스 배포 상태를 전역 출력으로 설정
+        if [ -f "LLM/index.md" ] && [ -f "ALL/index.md" ]; then
+          echo "index_files_ready=true" >> $GITHUB_OUTPUT
+        else
+          echo "index_files_ready=false" >> $GITHUB_OUTPUT
+        fi
     
     - name: Wait for GitHub Pages deployment
-      if: steps.run_digest.outputs.success == 'true' && (steps.deploy.outputs.digest_deployed == 'true' || steps.deploy.outputs.index_deployed == 'true')
+      if: steps.run_digest.outputs.success == 'true' && steps.deploy.outputs.digest_deployed == 'true'
       id: wait_pages
       run: |
         echo "Waiting for GitHub Pages deployment to complete..."
@@ -241,7 +248,7 @@ jobs:
           echo "Checking deployment status... (${WAIT_TIME}s elapsed)"
           
           # GitHub Pages 상태 확인 (오늘 날짜의 다이제스트 파일이 실제로 배포되었는지 확인)
-          TODAY_FILE_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${{ steps.check_status.outputs.today }}"
+          TODAY_FILE_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${{ steps.check_status.outputs.today }}.md"
           echo "Checking for file at: $TODAY_FILE_URL"
           if curl -s -o /dev/null -w "%{http_code}" "$TODAY_FILE_URL" | grep -q "200"; then
             echo "GitHub Pages deployment completed successfully!"
@@ -259,7 +266,7 @@ jobs:
         fi
     
     - name: Send email digest
-      if: steps.run_digest.outputs.success == 'true' && (steps.deploy.outputs.digest_deployed == 'true' || steps.deploy.outputs.index_deployed == 'true') && steps.wait_pages.outputs.pages_ready == 'true'
+      if: steps.run_digest.outputs.success == 'true' && steps.deploy.outputs.digest_deployed == 'true' && steps.deploy.outputs.index_files_ready == 'true' && steps.wait_pages.outputs.pages_ready == 'true'
       id: send_email
       run: |
         echo "Sending email digest..."
