@@ -239,10 +239,10 @@ jobs:
       run: |
         echo "Waiting for GitHub Pages deployment to complete..."
         
-        # GitHub Pages 배포 완료까지 최대 5분 대기
-        MAX_WAIT=300  # 5분
+        # GitHub Pages 배포 완료까지 최대 10분 대기
+        MAX_WAIT=600  # 10분
         WAIT_TIME=0
-        SLEEP_INTERVAL=15  # 15초마다 확인
+        SLEEP_INTERVAL=20  # 20초마다 확인
         
         while [ $WAIT_TIME -lt $MAX_WAIT ]; do
           echo "Checking deployment status... (${WAIT_TIME}s elapsed)"
@@ -250,10 +250,35 @@ jobs:
           # GitHub Pages 상태 확인 (오늘 날짜의 다이제스트 파일이 실제로 배포되었는지 확인)
           TODAY_FILE_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${{ steps.check_status.outputs.today }}.md"
           echo "Checking for file at: $TODAY_FILE_URL"
-          if curl -s -o /dev/null -w "%{http_code}" "$TODAY_FILE_URL" | grep -q "200"; then
+          
+          # HTTP 상태 코드 확인
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TODAY_FILE_URL")
+          echo "HTTP response code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
             echo "GitHub Pages deployment completed successfully!"
             echo "pages_ready=true" >> $GITHUB_OUTPUT
             break
+          elif [ "$HTTP_CODE" = "404" ]; then
+            echo "File not yet available (404). Continuing to wait..."
+          else
+            echo "Unexpected response code: $HTTP_CODE. Continuing to wait..."
+          fi
+          
+          # 5분 후부터는 인덱스 페이지도 확인 (대체 확인 방법)
+          if [ $WAIT_TIME -ge 300 ]; then
+            INDEX_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/"
+            INDEX_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$INDEX_URL")
+            echo "Also checking index page: $INDEX_CODE"
+            
+            if [ "$INDEX_CODE" = "200" ]; then
+              # 인덱스 페이지가 업데이트되었는지 확인 (오늘 날짜 포함 여부)
+              if curl -s "$INDEX_URL" | grep -q "${{ steps.check_status.outputs.today }}"; then
+                echo "Index page updated with today's content. Assuming deployment is ready."
+                echo "pages_ready=true" >> $GITHUB_OUTPUT
+                break
+              fi
+            fi
           fi
           
           sleep $SLEEP_INTERVAL
