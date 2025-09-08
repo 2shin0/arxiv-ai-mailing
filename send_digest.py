@@ -71,13 +71,28 @@ def find_latest_html_file():
 def generate_digest_from_json():
     """JSON 파일에서 HTML 다이제스트를 생성합니다."""
     from datetime import datetime
+    import glob
     
     today_str = datetime.today().strftime('%y%m%d')
     json_file = f"results/arxiv_{today_str}.json"
     
+    # 먼저 오늘 날짜의 JSON 파일을 찾아봄
     if not os.path.exists(json_file):
-        print(f"[오류] JSON 파일을 찾을 수 없습니다: {json_file}")
-        return None
+        print(f"[정보] 오늘 날짜의 JSON 파일을 찾을 수 없습니다: {json_file}")
+        
+        # results 폴더에서 가장 최근의 JSON 파일을 찾아봄
+        if os.path.exists("results"):
+            json_files = glob.glob("results/arxiv_*.json")
+            if json_files:
+                json_files.sort(reverse=True)  # 최신 파일 먼저
+                json_file = json_files[0]
+                print(f"[정보] 가장 최근의 JSON 파일을 사용합니다: {json_file}")
+            else:
+                print("[오류] results 폴더에 JSON 파일이 없습니다.")
+                return None
+        else:
+            print("[오류] results 폴더가 존재하지 않습니다.")
+            return None
     
     try:
         with open(json_file, 'r', encoding='utf-8') as f:
