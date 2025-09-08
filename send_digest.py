@@ -44,48 +44,98 @@ def send_html_digest(html_file_path):
 
 def find_latest_html_file():
     """가장 최근의 HTML 다이제스트 파일을 찾습니다."""
-    from datetime import datetime
-    
-    today_str = datetime.today().strftime('%y%m%d')
-    
-    # 가능한 HTML 파일 경로들
-    possible_paths = [
-        f"results_html/arxiv_digest_{today_str}.html",
-        f"arxiv_digest_{today_str}.html",
-        "latest_digest.html"
-    ]
-    
-    for path in possible_paths:
+    import glob
+
+    # 우선 고정 경로들 탐색
+    candidates = []
+    for path in [
+        "latest_digest.html",
+        *glob.glob("results_html/arxiv_digest_*.html"),
+        *glob.glob("arxiv_digest_*.html"),
+    ]:
         if os.path.exists(path):
-            return path
-    
-    # results_html 디렉토리에서 가장 최근 파일 찾기
-    if os.path.exists("results_html"):
-        html_files = [f for f in os.listdir("results_html") if f.endswith('.html')]
-        if html_files:
-            html_files.sort(reverse=True)  # 최신 파일 먼저
-            return os.path.join("results_html", html_files[0])
-    
-    return None
+            candidates.append(path)
+
+    if not candidates and os.path.exists("results_html"):
+        # 혹시 확장자가 다를 수 있으니 .html 전체를 수집
+        candidates = [os.path.join("results_html", f)
+                      for f in os.listdir("results_html")
+                      if f.endswith(".html")]
+
+    if not candidates:
+        return None
+
+    # 수정시간(mtime) 최신순으로 선택
+    candidates.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+    return candidates[0]
+
 
 def generate_digest_from_json():
     """JSON 파일에서 HTML 다이제스트를 생성합니다."""
     from datetime import datetime
     import glob
     import json
-    
+
+    def load_json_any(path):
+        """JSON 또는 NDJSON 모두 지원."""
+        with open(path, 'r', encoding='utf-8') as f:
+            text = f.read().strip()
+            # NDJSON 추정: 줄이 많고 각 줄이 {}로 시작/끝
+            if "\n" in text and text.lstrip().startswith("{") and "\n{" in text:
+                objs = []
+                for line in text.splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        objs.append(json.loads(line))
+                    except Exception:
+                        # 한 줄이라도 실패하면 NDJSON 아님: 전체로 파싱 시도
+                        objs = None
+                        break
+                if objs is not None:
+                    return objs
+            # 일반 JSON
+            return json.loads(text)
+
+    def coerce_papers(data):
+        """data가 list든 dict든 papers 리스트로 강제 변환."""
+        # 이미 리스트인 경우
+        if isinstance(data, list):
+            # 리스트 안이 dict인지 간단 검증
+            if data and not isinstance(data[0], dict):
+                raise ValueError("JSON 최상위 리스트 요소가 dict가 아닙니다.")
+            return data
+
+        # dict인 경우 흔한 키들을 순서대로 탐색
+        if isinstance(data, dict):
+            for key in ("papers", "items", "results", "data"):
+                v = data.get(key)
+                if isinstance(v, list):
+                    return v
+
+            # dict인데 루트가 곧 paper 하나인 경우 -> 단일 원소 리스트로 래핑
+            # (ex. {"title": "...", "authors": [...]})
+            # 최소한의 휴리스틱: title/summary/abstract 중 하나가 있으면 paper로 간주
+            if any(k in data for k in ("title", "summary", "abstract")):
+                return [data]
+
+        # 여기까지 오면 지원 불가 구조
+        raise ValueError(
+            f"지원하지 않는 JSON 구조입니다 (type={type(data).__name__})."
+        )
+
     today_str = datetime.today().strftime('%y%m%d')
     json_file = f"results/arxiv_{today_str}.json"
-    
-    # 먼저 오늘 날짜의 JSON 파일을 찾아봄
+
+    # 오늘 파일이 없으면 가장 최근 파일 사용
     if not os.path.exists(json_file):
         print(f"[정보] 오늘 날짜의 JSON 파일을 찾을 수 없습니다: {json_file}")
-        
-        # results 폴더에서 가장 최근의 JSON 파일을 찾아봄
         if os.path.exists("results"):
             json_files = glob.glob("results/arxiv_*.json")
             if json_files:
-                json_files.sort(reverse=True)  # 최신 파일 먼저
+                # mtime 기준 최신
+                json_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
                 json_file = json_files[0]
                 print(f"[정보] 가장 최근의 JSON 파일을 사용합니다: {json_file}")
             else:
@@ -94,41 +144,40 @@ def generate_digest_from_json():
         else:
             print("[오류] results 폴더가 존재하지 않습니다.")
             return None
-    else:
-        print(f"[정보] 오늘 날짜의 JSON 파일을 찾았습니다: {json_file}")
-    
+
     try:
-        with open(json_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        # JSON 데이터가 배열인지 딕셔너리인지 확인
-        if isinstance(data, list):
-            papers = data
-        else:
-            papers = data.get('papers', [])
-            
+        data = load_json_any(json_file)
+        papers = coerce_papers(data)
+
         if not papers:
             print("[오류] JSON 파일에 논문 데이터가 없습니다.")
             return None
-        
-        # main.py의 make_digest 함수를 임포트하여 사용
+
+        # 디버깅 보강: 타입/샘플 출력
+        print(f"[정보] 로드된 papers 개수: {len(papers)} / 타입예시: {type(papers[0]).__name__}")
+        if isinstance(papers[0], dict):
+            sample_keys = list(papers[0].keys())[:8]
+            print(f"[정보] 첫 논문 키: {sample_keys}")
+
+        # make_digest 사용
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from main import make_digest
-        
+
         html_content = make_digest(papers)
-        
-        # HTML 파일로 저장
+
+        # 파일로 저장
         os.makedirs("results_html", exist_ok=True)
         html_file = f"results_html/arxiv_digest_{today_str}.html"
         with open(html_file, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        
+
         print(f"[정보] HTML 다이제스트를 생성했습니다: {html_file}")
         return html_content
-        
+
     except Exception as e:
         print(f"[오류] JSON에서 HTML 생성 실패: {e}")
         return None
+
 
 def main():
     import json

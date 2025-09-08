@@ -30,18 +30,10 @@ def make_digest(papers):
     if llm_papers:
         lines.append("<h3>🔍 LLM 관련 논문</h3>")
         for i, paper in enumerate(llm_papers, 1):
-            # 기존에 요약이 있는지 확인
-            if 'summary_en' in paper and 'summary_ko' in paper:
-                summary_en = paper['summary_en']
-                summary_ko = paper['summary_ko']
-            else:
-                # 요약이 없으면 abstract의 일부만 사용
-                abstract = paper['abstract']
-                summary_en = abstract[:200] + "..." if len(abstract) > 200 else abstract
-                summary_ko = "요약 정보가 없습니다. 원문을 참고해주세요."
-            
+            summary_en = summarize_text(paper['abstract'])
+            summary_ko = translate_text(summary_en)
             lines.append(f"<strong>{i}. {paper['title']}</strong>")
-            lines.append(f"- Authors: {paper.get('authors', 'Unknown')}")
+            lines.append(f"- Authors: {paper['authors']}")
             lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
@@ -51,18 +43,10 @@ def make_digest(papers):
     if other_papers:
         lines.append("<h3>📚 그 외 논문</h3>")
         for i, paper in enumerate(other_papers, 1):
-            # 기존에 요약이 있는지 확인
-            if 'summary_en' in paper and 'summary_ko' in paper:
-                summary_en = paper['summary_en']
-                summary_ko = paper['summary_ko']
-            else:
-                # 요약이 없으면 abstract의 일부만 사용
-                abstract = paper['abstract']
-                summary_en = abstract[:200] + "..." if len(abstract) > 200 else abstract
-                summary_ko = "요약 정보가 없습니다. 원문을 참고해주세요."
-            
+            summary_en = summarize_text(paper['abstract'])
+            summary_ko = translate_text(summary_en)
             lines.append(f"<strong>{i}. {paper['title']}</strong>")
-            lines.append(f"- Authors: {paper.get('authors', 'Unknown')}")
+            lines.append(f"- Authors: {paper['authors']}")
             lines.append(f"- URL: <a href='{paper['url']}'>{paper['url']}</a>")
             lines.append(f"- 요약 (영문): {summary_en}")
             lines.append(f"- 요약 (한글): {summary_ko}<br><br>")
