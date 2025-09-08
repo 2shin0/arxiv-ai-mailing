@@ -72,6 +72,7 @@ def generate_digest_from_json():
     """JSON 파일에서 HTML 다이제스트를 생성합니다."""
     from datetime import datetime
     import glob
+    import json
     
     today_str = datetime.today().strftime('%y%m%d')
     json_file = f"results/arxiv_{today_str}.json"
