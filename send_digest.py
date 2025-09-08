@@ -94,12 +94,19 @@ def generate_digest_from_json():
         else:
             print("[오류] results 폴더가 존재하지 않습니다.")
             return None
+    else:
+        print(f"[정보] 오늘 날짜의 JSON 파일을 찾았습니다: {json_file}")
     
     try:
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        papers = data.get('papers', [])
+        # JSON 데이터가 배열인지 딕셔너리인지 확인
+        if isinstance(data, list):
+            papers = data
+        else:
+            papers = data.get('papers', [])
+            
         if not papers:
             print("[오류] JSON 파일에 논문 데이터가 없습니다.")
             return None
