@@ -37,6 +37,8 @@ def send_html_digest(html_file_path):
     
     if result:
         print("[성공] 이메일이 성공적으로 발송되었습니다!")
+        # 메일 발송 성공 시 상태 파일 생성
+        create_email_sent_flag()
     else:
         print("[실패] 이메일 발송에 실패했습니다.")
     
@@ -179,6 +181,23 @@ def generate_digest_from_json():
         return None
 
 
+def create_email_sent_flag():
+    """이메일 발송 성공 시 상태 파일을 생성합니다."""
+    from datetime import datetime
+    import os
+    
+    # results 디렉터리 생성
+    os.makedirs("results", exist_ok=True)
+    
+    # 날짜 형식을 다른 파일들과 통일 (YYYY-MM-DD)
+    today = datetime.today().strftime('%Y-%m-%d')
+    flag_file = f"results/{today}_email_sent.flag"
+    
+    with open(flag_file, 'w') as f:
+        f.write("email_sent")
+    print(f"[정보] 이메일 발송 성공 상태 파일을 생성했습니다: {flag_file}")
+
+
 def main():
     import json
     
@@ -222,6 +241,8 @@ def main():
                 
                 if result:
                     print("[성공] 이메일이 성공적으로 발송되었습니다!")
+                    # 메일 발송 성공 시 상태 파일 생성
+                    create_email_sent_flag()
                     success = True
                 else:
                     print("[실패] 이메일 발송에 실패했습니다.")

@@ -56,6 +56,15 @@ def make_digest(papers):
     return '\n'.join(lines)
 
 def main():
+    # 0. 당일 이미 메일이 발송되었는지 확인
+    today_str = datetime.today().strftime('%Y-%m-%d')
+    email_flag_file = f"results/{today_str}_email_sent.flag"
+    
+    if os.path.exists(email_flag_file):
+        print(f"오늘({today_str}) 이미 메일이 발송되었습니다. 작업을 종료합니다.")
+        print(f"상태 파일: {email_flag_file}")
+        return
+    
     # 1. 어제자 논문 크롤링
     papers = fetch_recent_ai_papers()
     if not papers:
@@ -108,6 +117,9 @@ def main():
 
     if email_result:
         print("모든 처리가 완료되었습니다.")
+        # 이메일 발송 완료 후 상태 파일 생성
+        with open(email_flag_file, "w") as f:
+            f.write("Email sent successfully.")
     else:
         print("이메일 전송에 실패했습니다. 로그를 확인하세요.")
         # 실패 시 다이제스트를 HTML 파일로 저장
