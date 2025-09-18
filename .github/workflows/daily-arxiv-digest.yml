@@ -11,12 +11,14 @@ on:
 
 # 동시 실행 방지 설정
 concurrency:
-  group: arxiv-digest-${{ github.ref }}
-  cancel-in-progress: false 
+  group: arxiv-digest
+  cancel-in-progress: true
 
 jobs:
   generate-and-send-digest:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
     
     steps:
     - name: Checkout repository
@@ -50,46 +52,55 @@ jobs:
         echo "GOOGLE_SCRIPT_ID=${{ secrets.GOOGLE_SCRIPT_ID }}" >> $GITHUB_ENV
         echo "DEEPL_API_KEY=${{ secrets.DEEPL_API_KEY }}" >> $GITHUB_ENV
     
-    - name: Check if already processed today
+    - name: Check if already processed today (robust)
       id: check_status
       run: |
-        # 오늘 날짜 확인
         TODAY=$(date +'%Y-%m-%d')
         echo "today=$TODAY" >> $GITHUB_OUTPUT
-        
-        # 이미 메일이 발송되었는지 확인
-        EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
-        if [ -f "$EMAIL_STATUS_FILE" ]; then
+
+        # 1) arxiv-digest 브랜치에서 오늘 파일 존재 여부 확인
+        JSON_PATH="results/arxiv_$(date +'%y%m%d').json"
+        MD_PATH="digest/ALL/${TODAY}.md"
+
+        set +e
+        git fetch origin arxiv-digest >/dev/null 2>&1
+        git show origin/arxiv-digest:$JSON_PATH >/dev/null 2>&1
+        HAS_JSON=$?
+        git show origin/arxiv-digest:$MD_PATH >/dev/null 2>&1
+        HAS_MD=$?
+        set -e
+
+        if [ $HAS_JSON -eq 0 ] && [ $HAS_MD -eq 0 ]; then
           echo "already_processed=true" >> $GITHUB_OUTPUT
-          echo "Email already sent today. Found flag file: $EMAIL_STATUS_FILE"
+          echo "Today's digest exists in arxiv-digest branch. Skipping."
           exit 0
         fi
-        
-        # 성공적으로 처리된 파일이 있는지 확인
-        if [ -f "results/arxiv_$(date +'%y%m%d').json" ] && [ -f "digest/ALL/${TODAY}.md" ]; then
-          # JSON 파일에서 논문 수 확인
-          PAPER_COUNT=$(python -c "
-            import json, os
-            try:
-                with open('results/arxiv_$(date +'%y%m%d').json', 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                print(len(data.get('papers', [])))
-            except:
-                print('0')
-          " 2>/dev/null || echo "0")
-          
-          if [ "$PAPER_COUNT" -gt "0" ]; then
-            echo "already_processed=true" >> $GITHUB_OUTPUT
-            echo "Today's digest already exists with $PAPER_COUNT papers. Skipping execution."
-          else
-            echo "already_processed=false" >> $GITHUB_OUTPUT
-            echo "Previous execution found no papers. Retrying..."
-          fi
-        else
-          echo "already_processed=false" >> $GITHUB_OUTPUT
-          echo "No digest found for today. Proceeding with execution."
+
+        # 2) GH Pages에서 확인(배포 완료 후 재실행을 막기 위함)
+        PAGES_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${TODAY}.md"
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PAGES_URL" || echo "000")
+        if [ "$HTTP_CODE" = "200" ]; then
+          echo "already_processed=true" >> $GITHUB_OUTPUT
+          echo "Today's digest is already on GitHub Pages. Skipping."
+          exit 0
         fi
-    
+
+        # 3) 플래그 파일(arxiv-digest 브랜치에서 확인)
+        EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
+        set +e
+        git show origin/arxiv-digest:$EMAIL_STATUS_FILE >/dev/null 2>&1
+        HAS_FLAG=$?
+        set -e
+        
+        if [ $HAS_FLAG -eq 0 ]; then
+          echo "already_processed=true" >> $GITHUB_OUTPUT
+          echo "Email already sent today (flag exists in arxiv-digest branch). Skipping."
+          exit 0
+        fi
+
+        echo "already_processed=false" >> $GITHUB_OUTPUT
+        echo "No digest found for today. Proceeding with execution."
+
     - name: Run arXiv digest generation
       id: run_digest
       if: steps.check_status.outputs.already_processed == 'false'
@@ -322,11 +333,19 @@ jobs:
             echo "email_sent=true" >> $GITHUB_OUTPUT
             echo "Email sent successfully"
             
-            # 메일 발송 성공 시 상태 파일 생성
+            # 메일 발송 성공 시 상태 파일 생성 및 커밋
             TODAY=$(date +'%Y-%m-%d')
             EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
             touch "$EMAIL_STATUS_FILE"
             echo "Created flag file: $EMAIL_STATUS_FILE"
+            
+            # 플래그 파일을 arxiv-digest 브랜치에 커밋하여 영속화
+            git checkout arxiv-digest
+            git add "$EMAIL_STATUS_FILE"
+            git commit -m "Add email sent flag for $TODAY" || echo "Flag file already exists"
+            git push origin arxiv-digest
+            git checkout main
+            echo "Flag file committed to arxiv-digest branch"
           else
             echo "email_sent=false" >> $GITHUB_OUTPUT
             echo "Failed to send email"
