@@ -16,8 +16,9 @@ model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
 summarizer = pipeline("summarization", model=model, tokenizer=tokenizer)
 
 # 텍스트를 모델 입력 크기에 맞게 분할 (문자 기준: 간단 버전)
-def chunk_text(text, max_chunk_size=512):
-    return [text[i:i + max_chunk_size] for i in range(0, len(text), max_chunk_size)]
+def chunk_text(text, max_tokens=512):
+    tokens = tokenizer.encode(text, truncation=False)
+    return [tokens[i:i+max_tokens] for i in range(0, len(tokens), max_tokens)]
 
 def summarize_text(text, max_length=100, min_length=30):
     chunks = chunk_text(text, max_chunk_size=512)
