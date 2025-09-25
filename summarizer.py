@@ -32,6 +32,7 @@ def summarize_text(text, max_length=100, min_length=30):
             chunk,
             max_length=adjusted_max,
             min_length=min_length,
+            no_repeat_ngram_size=3,
             do_sample=False,
             truncation=True,     # 입력 초과 방지
         )
