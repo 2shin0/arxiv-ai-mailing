@@ -1,8 +1,12 @@
 requests
 beautifulsoup4
-transformers
 python-dotenv
-torch
 gspread
 google-auth-oauthlib
 pytz
+
+transformers>=4.41,<5
+torch>=2.1
+sentencepiece>=0.1.99
+protobuf>=3.20.3,<5
+accelerate>=0.28
