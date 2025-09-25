@@ -318,6 +318,8 @@ jobs:
         # arxiv-digest 브랜치에서 JSON 파일을 main 브랜치로 복사
         echo "Copying JSON file from arxiv-digest branch..."
         git fetch origin arxiv-digest
+
+        mkdir -p results
         
         # 오늘 날짜의 JSON 파일을 arxiv-digest 브랜치에서 복사
         TODAY=$(date +'%y%m%d')
@@ -326,19 +328,18 @@ jobs:
         if git show origin/arxiv-digest:$JSON_FILE > $JSON_FILE 2>/dev/null; then
           echo "Successfully copied JSON file: $JSON_FILE"
           
-          # results 디렉토리가 없으면 생성
-          mkdir -p results
-          
           if python send_digest.py > email.log 2>&1; then
             echo "email_sent=true" >> $GITHUB_OUTPUT
             echo "Email sent successfully"
+
+            rm -f "$JSON_FILE"
             
             # 메일 발송 성공 시 상태 파일 생성 및 커밋
             TODAY=$(date +'%Y-%m-%d')
             EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
             touch "$EMAIL_STATUS_FILE"
             echo "Created flag file: $EMAIL_STATUS_FILE"
-            
+
             # 플래그 파일을 arxiv-digest 브랜치에 커밋하여 영속화
             git checkout arxiv-digest
             git add "$EMAIL_STATUS_FILE"
