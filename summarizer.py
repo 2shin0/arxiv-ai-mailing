@@ -38,12 +38,22 @@ def summarize_text(text, max_length=100, min_length=30):
     return " ".join(summaries)
 
 def translate_text(text, source_lang="EN", target_lang="KO"):
+    """
+    DeepL API를 이용하여 번역
+    """
     url = "https://api-free.deepl.com/v2/translate"
     params = {
         "auth_key": DEEPL_API_KEY,
         "text": text,
         "source_lang": source_lang,
-        "target_lang_
+        "target_lang": target_lang
+    }
+    response = requests.post(url, data=params)
+    if response.status_code == 200:
+        return response.json()["translations"][0]["text"]
+    else:
+        raise Exception(f"DeepL API 오류: {response.status_code} - {response.text}")
+
 
 
 
