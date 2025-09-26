@@ -21,7 +21,7 @@ def chunk_text(text, max_tokens=512):
     return [tokens[i:i+max_tokens] for i in range(0, len(tokens), max_tokens)]
 
 def summarize_text(text, max_length=100, min_length=30):
-    chunks = chunk_text(text, max_chunk_size=512)
+    chunks = chunk_text(text, max_tokens=512)
     summaries = []
     for chunk in chunks:
         # 아주 짧은 청크에서 min_length > max_length 되는 문제 방지
