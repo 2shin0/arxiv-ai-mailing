@@ -5,6 +5,54 @@ import sys
 import os
 from email_sender import send_email
 
+def as_text(x):
+    """어떤 값이 와도 안전한 문자열로 변환"""
+    if x is None:
+        return ""
+    if isinstance(x, (list, tuple, set)):
+        return ", ".join(as_text(i) for i in x)
+    if isinstance(x, dict):
+        # 대표 키 후보
+        for k in ("name", "text", "value", "title"):
+            if k in x:
+                return as_text(x[k])
+        # 키:값 요약
+        return ", ".join(f"{as_text(k)}={as_text(v)}" for k, v in x.items())
+    return str(x)
+
+def normalize_paper(p):
+    """paper dict를 title/authors/abstract/url 중심으로 문자열화"""
+    if not isinstance(p, dict):
+        return {"title": as_text(p), "authors": "", "abstract": "", "url": ""}
+    # authors 처리: 리스트[딕셔너리/문자열] 모두 허용
+    a = p.get("authors")
+    if isinstance(a, (list, tuple, set)):
+        authors = ", ".join(as_text(i.get("name") if isinstance(i, dict) else i) for i in a)
+    else:
+        authors = as_text(a)
+    return {
+        "title": as_text(p.get("title") or p.get("paper_title") or p.get("name")),
+        "authors": authors,
+        "abstract": as_text(p.get("abstract") or p.get("summary") or p.get("description")),
+        "url": as_text(p.get("url") or p.get("link")),
+        # 원본 유지(필요시)
+        "_raw": p,
+    }
+
+def debug_validate_papers(papers):
+    """문자열/리스트가 아닌 필드가 있으면 로그로 위치 출력"""
+    fields = ("title", "authors", "abstract", "url")
+    for idx, p in enumerate(papers):
+        if not isinstance(p, dict):
+            print(f"[디버그] paper[{idx}] 타입이 dict 아님: {type(p).__name__} -> {repr(p)[:80]}")
+            continue
+        for f in fields:
+            v = p.get(f)
+            # 정규화 이전 상황도 잡아내기 위해 엄격 체크
+            if not (isinstance(v, (str, list, tuple)) or v is None):
+                print(f"[디버그] 잘못된 타입: paper[{idx}].{f}={type(v).__name__} -> {repr(v)[:80]}")
+
+
 def send_html_digest(html_file_path):
     """HTML 다이제스트 파일을 읽어서 이메일로 발송합니다."""
     
@@ -32,7 +80,10 @@ def send_html_digest(html_file_path):
     # 이메일 발송
     print(f"[정보] 이메일 발송을 시작합니다...")
     print(f"[정보] 제목: {subject}")
-    
+
+    if not os.environ.get("RECIPIENT"):
+        print("[경고] 환경변수 RECIPIENT 가 비어 있습니다. 이메일 전송이 실패할 수 있습니다.")
+
     result = send_email(subject, html_content)
     
     if result:
@@ -162,10 +213,40 @@ def generate_digest_from_json():
             print(f"[정보] 첫 논문 키: {sample_keys}")
 
         # make_digest 사용
+        papers = [normalize_paper(p) for p in papers]
+        debug_validate_papers(papers)
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from main import make_digest
 
         html_content = make_digest(papers)
+        try:
+            html_content = make_digest(papers)
+        except Exception as e:
+            print(f"[오류] make_digest 실패: {e}")
+            print("[정보] 간단 HTML 폴백을 생성합니다.")
+            from datetime import datetime
+            from html import escape
+            today = datetime.today().strftime('%Y-%m-%d')
+            rows = []
+            for p in papers[:300]:  # 너무 길어지는 것 방지
+                title = escape(p.get("title",""))
+                authors = escape(p.get("authors",""))
+                abstract = escape(p.get("abstract",""))
+                url = escape(p.get("url",""))
+                rows.append(
+                    f"<article style='margin:16px 0;padding:12px;border:1px solid #eee;border-radius:8px'>"
+                    f"<h3 style='margin:0 0 6px 0'>{title}</h3>"
+                    f"<div style='font-size:0.9em;color:#555'>{authors}</div>"
+                    f"<p style='line-height:1.5'>{abstract}</p>"
+                    f"<a href='{url}' target='_blank' rel='noopener'>Link</a>"
+                    f"</article>"
+                )
+            html_content = (
+                f"<!doctype html><meta charset='utf-8'>"
+                f"<title>arXiv AI Digest {today}</title>"
+                f"<h2>arXiv AI Digest — {today}</h2>"
+                + "\n".join(rows)
+            )
 
         # 파일로 저장
         os.makedirs("results_html", exist_ok=True)
