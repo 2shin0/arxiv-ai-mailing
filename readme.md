@@ -142,7 +142,7 @@ python preview_email.py
 - **완전 자동화**: GitHub Actions를 통한 매일 자동 실행
 - **자동 크롤링**: arXiv cs.AI 카테고리에서 전날 등록된 논문 수집
 - **스마트 분류**: LLM 관련 논문과 기타 AI 논문 자동 분류
-- **AI 요약**: T5 모델을 활용한 논문 요약 생성
+- **AI 요약**: google/pegasus-cnn_dailymail 모델을 활용한 논문 요약 생성
 - **한국어 번역**: DeepL API를 통한 고품질 번역
 - **이메일 발송**: HTML 형식의 예쁜 이메일 자동 발송
 - **웹 아카이브**: GitHub Pages를 통한 논문 다이제스트 웹사이트
@@ -346,7 +346,7 @@ python preview_email.py
 - **Complete Automation**: Daily automatic execution via GitHub Actions
 - **Automatic Crawling**: Collect papers from arXiv cs.AI category
 - **Smart Classification**: Automatically classify LLM and other AI papers
-- **AI Summarization**: Generate summaries using T5 model
+- **AI Summarization**: Generate summaries using google/pegasus-cnn_dailymail model
 - **Korean Translation**: High-quality translation via DeepL API
 - **Email Delivery**: Send beautiful HTML-formatted emails
 - **Web Archive**: Paper digest website through GitHub Pages
