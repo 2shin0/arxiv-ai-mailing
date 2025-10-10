@@ -3,60 +3,98 @@ import requests
 from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
-# 환경 변수 로드
 load_dotenv()
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 
-# Pegasus 모델 로드 (slow 토크나이저 강제)
 MODEL_ID = "google/pegasus-cnn_dailymail"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=False)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
 
-# 여기서 'model'과 'tokenizer' 객체를 그대로 사용
 summarizer = pipeline("summarization", model=model, tokenizer=tokenizer)
 
-# 텍스트를 모델 입력 크기에 맞게 분할 (문자 기준: 간단 버전)
 def chunk_text(text, max_tokens=512):
-    tokens = tokenizer.encode(text, truncation=False)
-    return [tokens[i:i+max_tokens] for i in range(0, len(tokens), max_tokens)]
-
+    if not isinstance(text, str):
+        text = str(text)
+    
+    tokens = tokenizer.encode(text, truncation=False, add_special_tokens=True)
+    chunks = []
+    
+    for i in range(0, len(tokens), max_tokens):
+        chunk_tokens = tokens[i:i+max_tokens]
+        chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+        chunks.append(chunk_text)
+    
+    return chunks
+    
 def summarize_text(text, max_length=100, min_length=30):
-    chunks = chunk_text(text, max_tokens=512)
-    summaries = []
-    for chunk in chunks:
-        # 아주 짧은 청크에서 min_length > max_length 되는 문제 방지
-        input_len = max(len(chunk), 1)
-        adjusted_max = max(min(max_length, input_len // 2), min_length + 1)
+    if not text or not isinstance(text, str):
+        return "No summary available"
 
-        out = summarizer(
-            chunk,
-            max_length=adjusted_max,
-            min_length=min_length,
-            no_repeat_ngram_size=3,
-            do_sample=False,
-            truncation=True,     # 입력 초과 방지
-        )
-        summaries.append(out[0]["summary_text"])
-    return " ".join(summaries)
+    if len(text.split()) < min_length:
+        return text
+    
+    try:
+        chunks = chunk_text(text, max_tokens=512)
+        summaries = []
+        
+        for chunk in chunks:
+            chunk_words = len(chunk.split())
+            if chunk_words < 10:
+                continue
+
+            adjusted_max = min(max_length, max(chunk_words // 2, min_length + 5))
+            adjusted_min = min(min_length, adjusted_max - 5)
+            
+            try:
+                out = summarizer(
+                    chunk,
+                    max_length=adjusted_max,
+                    min_length=adjusted_min,
+                    no_repeat_ngram_size=3,
+                    do_sample=False,
+                    truncation=True,
+                )
+                summaries.append(out[0]["summary_text"])
+            except Exception as e:
+                print(f"[경고] 청크 요약 실패: {e}")
+                # 실패한 청크는 첫 문장만 추출
+                first_sentence = chunk.split('.')[0] + '.'
+                summaries.append(first_sentence)
+        
+        return " ".join(summaries) if summaries else text[:200] + "..."
+        
+    except Exception as e:
+        print(f"[오류] 요약 생성 실패: {e}")
+        # 폴백: 첫 200자 반환
+        return text[:200] + "..." if len(text) > 200 else text
 
 def translate_text(text, source_lang="EN", target_lang="KO"):
-    """
-    DeepL API를 이용하여 번역
-    """
-    url = "https://api-free.deepl.com/v2/translate"
-    params = {
-        "auth_key": DEEPL_API_KEY,
-        "text": text,
-        "source_lang": source_lang,
-        "target_lang": target_lang
-    }
-    response = requests.post(url, data=params)
-    if response.status_code == 200:
-        return response.json()["translations"][0]["text"]
-    else:
-        raise Exception(f"DeepL API 오류: {response.status_code} - {response.text}")
-
-
+    if not text or not isinstance(text, str):
+        return "Translation not available"
+    
+    if not DEEPL_API_KEY:
+        print("[경고] DeepL API 키가 설정되지 않았습니다.")
+        return text
+    
+    try:
+        url = "https://api-free.deepl.com/v2/translate"
+        params = {
+            "auth_key": DEEPL_API_KEY,
+            "text": text,
+            "source_lang": source_lang,
+            "target_lang": target_lang
+        }
+        response = requests.post(url, data=params, timeout=30)
+        
+        if response.status_code == 200:
+            return response.json()["translations"][0]["text"]
+        else:
+            print(f"[경고] DeepL API 오류: {response.status_code}")
+            return text
+            
+    except Exception as e:
+        print(f"[오류] 번역 실패: {e}")
+        return text
 
 
 
