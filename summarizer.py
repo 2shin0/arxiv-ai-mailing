@@ -78,13 +78,21 @@ def translate_text(text, source_lang="EN", target_lang="KO"):
     
     try:
         url = "https://api-free.deepl.com/v2/translate"
-        params = {
-            "auth_key": DEEPL_API_KEY,
+        
+        # 1. 인증을 위해 헤더(Header)를 추가합니다.
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {DEEPL_API_KEY}"
+        }
+        
+        # 2. 본문 데이터에서는 auth_key를 제거합니다.
+        data = {
             "text": text,
             "source_lang": source_lang,
             "target_lang": target_lang
         }
-        response = requests.post(url, data=params, timeout=30)
+        
+        # 3. headers 파라미터를 추가하여 요청을 보냅니다.
+        response = requests.post(url, headers=headers, data=data, timeout=30)
         
         if response.status_code == 200:
             return response.json()["translations"][0]["text"]
@@ -95,6 +103,34 @@ def translate_text(text, source_lang="EN", target_lang="KO"):
     except Exception as e:
         print(f"[오류] 번역 실패: {e}")
         return text
+
+# def translate_text(text, source_lang="EN", target_lang="KO"):
+#     if not text or not isinstance(text, str):
+#         return "Translation not available"
+    
+#     if not DEEPL_API_KEY:
+#         print("[경고] DeepL API 키가 설정되지 않았습니다.")
+#         return text
+    
+#     try:
+#         url = "https://api-free.deepl.com/v2/translate"
+#         params = {
+#             "auth_key": DEEPL_API_KEY,
+#             "text": text,
+#             "source_lang": source_lang,
+#             "target_lang": target_lang
+#         }
+#         response = requests.post(url, data=params, timeout=30)
+        
+#         if response.status_code == 200:
+#             return response.json()["translations"][0]["text"]
+#         else:
+#             print(f"[경고] DeepL API 오류: {response.status_code}")
+#             return text
+            
+#     except Exception as e:
+#         print(f"[오류] 번역 실패: {e}")
+#         return text
 
 
 
