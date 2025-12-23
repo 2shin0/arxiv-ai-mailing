@@ -96,19 +96,19 @@ def main():
     print("인덱스 페이지를 업데이트합니다...")
     update_all_indexes()
 
-    # 4. GitHub으로 다이제스트 배포
-    print("GitHub으로 다이제스트 배포 중...")
-    try:
-        subprocess.run(
-            "bash ./deploy_digest.sh",
-            check=True,
-            shell=True
-        )
-        print("배포 성공!")
-    except subprocess.CalledProcessError as e:
-        print(f"배포 실패: 스크립트가 오류 코드 {e.returncode}(으)로 종료되었습니다.")
-        print("배포에 실패하여 이메일 전송을 건너뜁니다.")
-        return # 배포 실패 시 여기서 중단
+    # # 4. GitHub으로 다이제스트 배포
+    # print("GitHub으로 다이제스트 배포 중...")
+    # try:
+    #     subprocess.run(
+    #         "bash ./deploy_digest.sh",
+    #         check=True,
+    #         shell=True
+    #     )
+    #     print("배포 성공!")
+    # except subprocess.CalledProcessError as e:
+    #     print(f"배포 실패: 스크립트가 오류 코드 {e.returncode}(으)로 종료되었습니다.")
+    #     print("배포에 실패하여 이메일 전송을 건너뜁니다.")
+    #     return # 배포 실패 시 여기서 중단
 
     # 5. 이메일 본문 생성 및 전송
     print("이메일 전송을 준비합니다...")
