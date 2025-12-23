@@ -126,25 +126,58 @@ jobs:
       if: steps.run_digest.outputs.success == 'true'
       id: deploy
       run: |
-        git checkout -B arxiv-digest
-        if [ -d "digest" ]; then git add digest/; fi
-        if [ -d "results" ]; then git add results/; fi
+        echo "Deploying to GitHub Pages..."
         
+        # 1. 생성된 최신 파일들을 임시 디렉토리에 백업
+        mkdir -p ../temp_gen
+        cp -r results/ digest/ ../temp_gen/ 2>/dev/null || true
+        
+        # 2. arxiv-digest 브랜치로 강제 전환 (충돌 파일 무시)
+        git checkout -f arxiv-digest
+        
+        # 3. 백업된 최신 파일들을 다시 복사하여 덮어쓰기
+        cp -r ../temp_gen/* . 2>/dev/null || true
+        
+        # 4. Git 설정 및 커밋/푸시
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add digest/ results/
         if ! git diff --staged --quiet; then
-          git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }}"
+          git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }} (Papers: ${{ steps.run_digest.outputs.paper_count }})"
           git push origin arxiv-digest --force
           echo "digest_deployed=true" >> $GITHUB_OUTPUT
         fi
         
-        git checkout main
+        # 5. main 브랜치로 돌아와서 인덱스 페이지 업데이트
+        git checkout -f main
         python -c "from exporter import update_all_indexes; update_all_indexes()"
         git add LLM/index.md ALL/index.md || true
         if ! git diff --staged --quiet; then
           git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
           git push origin main
-          echo "index_deployed=true" >> $GITHUB_OUTPUT
         fi
         echo "index_files_ready=true" >> $GITHUB_OUTPUT
+      # run: |
+      #   git checkout -B arxiv-digest
+      #   if [ -d "digest" ]; then git add digest/; fi
+      #   if [ -d "results" ]; then git add results/; fi
+        
+      #   if ! git diff --staged --quiet; then
+      #     git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }}"
+      #     git push origin arxiv-digest --force
+      #     echo "digest_deployed=true" >> $GITHUB_OUTPUT
+      #   fi
+        
+      #   git checkout main
+      #   python -c "from exporter import update_all_indexes; update_all_indexes()"
+      #   git add LLM/index.md ALL/index.md || true
+      #   if ! git diff --staged --quiet; then
+      #     git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
+      #     git push origin main
+      #     echo "index_deployed=true" >> $GITHUB_OUTPUT
+      #   fi
+      #   echo "index_files_ready=true" >> $GITHUB_OUTPUT
     
     - name: Wait for GitHub Pages deployment
       if: steps.check_status.outputs.email_already_sent == 'false' && (steps.run_digest.outputs.success == 'true' || steps.check_status.outputs.files_exist == 'true')
