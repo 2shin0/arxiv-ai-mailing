@@ -191,7 +191,7 @@ arxiv-ai-mailing/
 
 ### 📧 연락처
 - **개발자**: 2shin0
-- **이슈 제보 및 기능 제안**: 02.shin0@gmail.com
+- **이슈 제보 및 기능 제안**: 02.shin.00@gmail.com
 
 ---
 
@@ -395,7 +395,7 @@ This project follows the [MIT License](LICENSE).
 
 ### 📧 Contact
 - **Developer**: 2shin0
-- **Issues and Feature Requests**: 02.shin0@gmail.com
+- **Issues and Feature Requests**: 02.shin.00@gmail.com
 
 ---
 
