@@ -136,7 +136,7 @@ jobs:
         git checkout -f arxiv-digest
         
         # 3. 백업된 최신 파일들을 다시 복사하여 덮어쓰기
-        cp -r ../temp_gen/digest/* . 2>/dev/null || true
+        cp -r ../temp_gen/digest . 2>/dev/null || true
         cp -r ../temp_gen/results . 2>/dev/null || true
         
         # 4. Git 설정 및 커밋/푸시
