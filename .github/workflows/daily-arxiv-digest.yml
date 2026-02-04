@@ -11,7 +11,8 @@ on:
 
 concurrency:
   group: arxiv-digest
-  cancel-in-progress: true
+  # [수정 1] true -> false로 변경 (중요!)
+  cancel-in-progress: false
 
 jobs:
   generate-and-send-digest:
@@ -117,73 +118,64 @@ jobs:
         fi
     
     - name: Configure Git
-      if: steps.run_digest.outputs.success == 'true'
+      # if 조건 수정: 논문 생성을 안 했더라도(이미 파일이 있는 경우), 배포가 안 되어 있을 수 있으므로 실행
+      if: steps.run_digest.outputs.success == 'true' || steps.check_status.outputs.files_exist == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
     
     - name: Deploy to GitHub Pages
-      if: steps.run_digest.outputs.success == 'true'
+      if: steps.run_digest.outputs.success == 'true' || steps.check_status.outputs.files_exist == 'true'
       id: deploy
       run: |
         echo "Deploying to GitHub Pages..."
         
-        # 1. 생성된 최신 파일들을 임시 디렉토리에 백업
+        # 1. 생성된 최신 파일들을 임시 디렉토리에 백업 (만약 run_digest가 스킵됐다면 arxiv-digest에서 가져옴)
         mkdir -p ../temp_gen
-        cp -r results/ digest/ ../temp_gen/ 2>/dev/null || true
+        if [ "${{ steps.run_digest.outputs.success }}" == "true" ]; then
+           cp -r results/ digest/ ../temp_gen/ 2>/dev/null || true
+        else
+           git checkout arxiv-digest
+           cp -r results/ digest/ ../temp_gen/ 2>/dev/null || true
+           git checkout main
+        fi
         
-        # 2. arxiv-digest 브랜치로 강제 전환 (충돌 파일 무시)
+        # 2. arxiv-digest 브랜치로 강제 전환 (데이터 백업용)
         git checkout -f arxiv-digest
         
-        # 3. 백업된 최신 파일들을 다시 복사하여 덮어쓰기
+        # 3. 백업된 최신 파일들을 가져오기
         cp -r ../temp_gen/digest/* . 2>/dev/null || true
         cp -r ../temp_gen/results . 2>/dev/null || true
         
-        # 4. Git 설정 및 커밋/푸시
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
+        # 4. arxiv-digest 커밋/푸시
         git add ALL/ LLM/ results/
-        
         if ! git diff --staged --quiet; then
-          git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }} (Papers: ${{ steps.run_digest.outputs.paper_count }})"
+          git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }}"
           git push origin arxiv-digest --force
           echo "digest_deployed=true" >> $GITHUB_OUTPUT
         fi
         
         # 5. main 브랜치로 돌아와서 인덱스 페이지 업데이트
         git checkout -f main
+        
+        # [수정 2] main 브랜치에도 논문 파일(.md)을 복사해와야 합니다! (매우 중요)
+        cp -r ../temp_gen/digest/* . 2>/dev/null || true
+        
+        # 인덱스 재생성
         python -c "from exporter import update_all_indexes; update_all_indexes()"
-        git add LLM/index.md ALL/index.md || true
+        
+        # 인덱스 파일 뿐만 아니라 논문 폴더(LLM, ALL)도 함께 추가합니다.
+        git add LLM/ ALL/
+        
         if ! git diff --staged --quiet; then
-          git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
+          git commit -m "Update index pages and papers for ${{ steps.check_status.outputs.today }}"
           git push origin main
           echo "index_deployed=true" >> $GITHUB_OUTPUT
         fi
         echo "index_files_ready=true" >> $GITHUB_OUTPUT
-      # run: |
-      #   git checkout -B arxiv-digest
-      #   if [ -d "digest" ]; then git add digest/; fi
-      #   if [ -d "results" ]; then git add results/; fi
-        
-      #   if ! git diff --staged --quiet; then
-      #     git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }}"
-      #     git push origin arxiv-digest --force
-      #     echo "digest_deployed=true" >> $GITHUB_OUTPUT
-      #   fi
-        
-      #   git checkout main
-      #   python -c "from exporter import update_all_indexes; update_all_indexes()"
-      #   git add LLM/index.md ALL/index.md || true
-      #   if ! git diff --staged --quiet; then
-      #     git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
-      #     git push origin main
-      #     echo "index_deployed=true" >> $GITHUB_OUTPUT
-      #   fi
-      #   echo "index_files_ready=true" >> $GITHUB_OUTPUT
     
     - name: Wait for GitHub Pages deployment
-      if: steps.check_status.outputs.email_already_sent == 'false' && (steps.run_digest.outputs.success == 'true' || steps.check_status.outputs.files_exist == 'true')
+      if: steps.check_status.outputs.email_already_sent == 'false' && steps.deploy.outputs.index_files_ready == 'true'
       id: wait_pages
       run: |
         MAX_WAIT=600; WAIT_TIME=0; SLEEP_INTERVAL=20
@@ -202,13 +194,19 @@ jobs:
       if: steps.check_status.outputs.email_already_sent == 'false' && steps.wait_pages.outputs.pages_ready == 'true'
       id: send_email
       run: |
+        # JSON 파일을 arxiv-digest 브랜치에서 가져옴 (main에는 없을 수 있음)
         git fetch origin arxiv-digest
         mkdir -p results
         TODAY_SHORT=$(date +'%y%m%d')
         JSON_FILE="results/arxiv_${TODAY_SHORT}.json"
         
-        git show origin/arxiv-digest:$JSON_FILE > $JSON_FILE 2>/dev/null
+        git show origin/arxiv-digest:$JSON_FILE > $JSON_FILE 2>/dev/null || true
         
+        # 파일이 없으면 로컬에서 찾기 (방금 생성된 경우)
+        if [ ! -s "$JSON_FILE" ]; then
+           cp ../temp_gen/results/arxiv_${TODAY_SHORT}.json $JSON_FILE 2>/dev/null || true
+        fi
+
         if python send_digest.py > email.log 2>&1; then
           echo "email_sent=true" >> $GITHUB_OUTPUT
           
@@ -216,10 +214,15 @@ jobs:
           TODAY=$(date +'%Y-%m-%d')
           EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
           touch "$EMAIL_STATUS_FILE"
+          
+          # 플래그를 arxiv-digest 브랜치에 저장 (이력이 남도록)
           git checkout arxiv-digest
+          git pull origin arxiv-digest --rebase || true
           git add "$EMAIL_STATUS_FILE"
           git commit -m "Add email sent flag for $TODAY" || true
           git push origin arxiv-digest
+          
+          # main으로 복귀
           git checkout main
         else
           echo "email_sent=false" >> $GITHUB_OUTPUT
@@ -248,430 +251,3 @@ jobs:
     - name: Clean up credentials
       if: always()
       run: rm -f google_credentials.json
-
-# name: Daily arXiv AI Papers Digest
-
-# on:
-#   schedule:
-#     - cron: '30 0 * * 1-5'  # 9:30 KST (UTC 00:30)
-#     - cron: '0 1 * * 1-5'   # 10:00 KST (UTC 01:00)
-#     - cron: '30 1 * * 1-5'  # 10:30 KST (UTC 01:30)
-#     - cron: '0 2 * * 1-5'   # 11:00 KST (UTC 02:00)
-#     - cron: '30 2 * * 1-5'  # 11:30 KST (UTC 02:30)
-#   workflow_dispatch: 
-
-# # 동시 실행 방지 설정
-# concurrency:
-#   group: arxiv-digest
-#   cancel-in-progress: true
-
-# jobs:
-#   generate-and-send-digest:
-#     runs-on: ubuntu-latest
-#     env:
-#       TZ: Asia/Seoul
-    
-#     steps:
-#     - name: Checkout repository
-#       uses: actions/checkout@v4
-#       with:
-#         fetch-depth: 0
-#         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-    
-#     - name: Set up Python
-#       uses: actions/setup-python@v4
-#       with:
-#         python-version: '3.9'
-    
-#     - name: Install dependencies
-#       run: |
-#         python -m pip install --upgrade pip
-#         pip install -r requirements.txt
-    
-#     - name: Create Google API credentials file
-#       run: |
-#         echo '${{ secrets.GOOGLE_API_CREDENTIALS }}' > google_credentials.json
-#         echo "GOOGLE_API_CREDENTIALS_PATH=google_credentials.json" >> $GITHUB_ENV
-    
-#     - name: Set environment variables
-#       run: |
-#         echo "EMAIL_ADDRESS=${{ secrets.EMAIL_ADDRESS }}" >> $GITHUB_ENV
-#         echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> $GITHUB_ENV
-#         echo "RECIPIENT=${{ secrets.RECIPIENT }}" >> $GITHUB_ENV
-#         echo "GOOGLE_SHEET_NAME=${{ secrets.GOOGLE_SHEET_NAME }}" >> $GITHUB_ENV
-#         echo "GOOGLE_WORKSHEET_NAME=${{ secrets.GOOGLE_WORKSHEET_NAME }}" >> $GITHUB_ENV
-#         echo "GOOGLE_SCRIPT_ID=${{ secrets.GOOGLE_SCRIPT_ID }}" >> $GITHUB_ENV
-#         echo "DEEPL_API_KEY=${{ secrets.DEEPL_API_KEY }}" >> $GITHUB_ENV
-    
-#     - name: Check if already processed today (robust)
-#       id: check_status
-#       run: |
-#         TODAY=$(date +'%Y-%m-%d')
-#         echo "today=$TODAY" >> $GITHUB_OUTPUT
-
-#         # 1) arxiv-digest 브랜치에서 오늘 파일 존재 여부 확인
-#         JSON_PATH="results/arxiv_$(date +'%y%m%d').json"
-#         MD_PATH="digest/ALL/${TODAY}.md"
-
-#         set +e
-#         git fetch origin arxiv-digest >/dev/null 2>&1
-#         git show origin/arxiv-digest:$JSON_PATH >/dev/null 2>&1
-#         HAS_JSON=$?
-#         git show origin/arxiv-digest:$MD_PATH >/dev/null 2>&1
-#         HAS_MD=$?
-#         set -e
-
-#         if [ $HAS_JSON -eq 0 ] && [ $HAS_MD -eq 0 ]; then
-#           echo "already_processed=true" >> $GITHUB_OUTPUT
-#           echo "Today's digest exists in arxiv-digest branch. Skipping."
-#           exit 0
-#         fi
-
-#         # 2) GH Pages에서 확인(배포 완료 후 재실행을 막기 위함)
-#         PAGES_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${TODAY}.md"
-#         HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PAGES_URL" || echo "000")
-#         if [ "$HTTP_CODE" = "200" ]; then
-#           echo "already_processed=true" >> $GITHUB_OUTPUT
-#           echo "Today's digest is already on GitHub Pages. Skipping."
-#           exit 0
-#         fi
-
-#         # 3) 플래그 파일(arxiv-digest 브랜치에서 확인)
-#         EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
-#         set +e
-#         git show origin/arxiv-digest:$EMAIL_STATUS_FILE >/dev/null 2>&1
-#         HAS_FLAG=$?
-#         set -e
-        
-#         if [ $HAS_FLAG -eq 0 ]; then
-#           echo "already_processed=true" >> $GITHUB_OUTPUT
-#           echo "Email already sent today (flag exists in arxiv-digest branch). Skipping."
-#           exit 0
-#         fi
-
-#         echo "already_processed=false" >> $GITHUB_OUTPUT
-#         echo "No digest found for today. Proceeding with execution."
-
-#     - name: Run arXiv digest generation
-#       id: run_digest
-#       if: steps.check_status.outputs.already_processed == 'false'
-#       run: |
-#         echo "Starting arXiv digest generation..."
-        
-#         # 실행 시작 시간 기록
-#         START_TIME=$(date +'%Y-%m-%d %H:%M:%S')
-#         echo "start_time=$START_TIME" >> $GITHUB_OUTPUT
-        
-#         # main.py 실행 및 결과 캡처
-#         if python main.py > execution.log 2>&1; then
-#           echo "success=true" >> $GITHUB_OUTPUT
-#           echo "Digest generation completed successfully"
-          
-#           # 생성된 논문 수 확인 (더 안정적인 방법)
-#           PAPER_COUNT=$(grep -E "Total papers found: [0-9]+" execution.log | tail -1 | grep -oE "[0-9]+" || echo "0")
-#           echo "paper_count=$PAPER_COUNT" >> $GITHUB_OUTPUT
-#           echo "Papers processed: $PAPER_COUNT"
-          
-#           # 논문이 없는 경우 경고 표시
-#           if [ "$PAPER_COUNT" -eq "0" ]; then
-#             echo "Warning: No papers found for today"
-#             echo "warning=no_papers_found" >> $GITHUB_OUTPUT
-            
-#             # 현재 시간 확인하여 다음 재시도 시간 계산
-#             CURRENT_HOUR=$(date +'%H')
-#             CURRENT_MIN=$(date +'%M')
-            
-#             # 다음 실행 시간 계산 (KST 기준)
-#             if [ "$CURRENT_HOUR" -eq "9" ] && [ "$CURRENT_MIN" -ge "30" ]; then
-#               NEXT_TIME="10:00"
-#             elif [ "$CURRENT_HOUR" -eq "10" ] && [ "$CURRENT_MIN" -lt "30" ]; then
-#               NEXT_TIME="10:30"
-#             elif [ "$CURRENT_HOUR" -eq "10" ] && [ "$CURRENT_MIN" -ge "30" ]; then
-#               NEXT_TIME="11:00"
-#             elif [ "$CURRENT_HOUR" -eq "11" ] && [ "$CURRENT_MIN" -lt "30" ]; then
-#               NEXT_TIME="11:30"
-#             else
-#               NEXT_TIME="tomorrow 9:30"
-#             fi
-            
-#             echo "No papers available. Will retry at $NEXT_TIME KST"
-#             echo "next_retry_time=$NEXT_TIME" >> $GITHUB_OUTPUT
-#           else
-#             echo "Successfully processed $PAPER_COUNT papers"
-#           fi
-#         else
-#           echo "success=false" >> $GITHUB_OUTPUT
-#           echo "Digest generation failed"
-          
-#           # 에러 로그 출력
-#           echo "=== ERROR LOG ==="
-#           cat execution.log
-#           echo "================="
-          
-#           # 실패 이유 분석 (더 정확한 패턴 매칭)
-#           if grep -qE "(No papers found|0 papers)" execution.log; then
-#             echo "error_reason=no_papers_available" >> $GITHUB_OUTPUT
-#           elif grep -qE "(Failed to fetch|Connection|Network|HTTP)" execution.log; then
-#             echo "error_reason=network_error" >> $GITHUB_OUTPUT
-#           elif grep -qE "(API|Authentication|Credentials)" execution.log; then
-#             echo "error_reason=api_error" >> $GITHUB_OUTPUT
-#           elif grep -qE "(Permission|Access)" execution.log; then
-#             echo "error_reason=permission_error" >> $GITHUB_OUTPUT
-#           else
-#             echo "error_reason=unknown_error" >> $GITHUB_OUTPUT
-#           fi
-          
-#           exit 1
-#         fi
-    
-#     - name: Configure Git
-#       if: steps.run_digest.outputs.success == 'true'
-#       run: |
-#         git config --local user.email "action@github.com"
-#         git config --local user.name "GitHub Action"
-    
-#     - name: Deploy to GitHub Pages
-#       if: steps.run_digest.outputs.success == 'true'
-#       id: deploy
-#       run: |
-#         echo "Deploying to GitHub Pages..."
-        
-#         # arxiv-digest 브랜치로 전환하여 다이제스트 파일들 커밋
-#         git checkout -B arxiv-digest
-        
-#         # digest 폴더가 존재하는 경우에만 추가
-#         if [ -d "digest" ]; then
-#           git add digest/
-#           echo "Added digest folder"
-#         else
-#           echo "Warning: digest folder not found"
-#         fi
-        
-#         # results 폴더가 존재하는 경우에만 추가
-#         if [ -d "results" ]; then
-#           git add results/
-#           echo "Added results folder"
-#         else
-#           echo "Warning: results folder not found"
-#         fi
-        
-#         # 변경사항이 있는 경우에만 커밋
-#         if ! git diff --staged --quiet; then
-#           git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }} (Papers: ${{ steps.run_digest.outputs.paper_count }})"
-#           git push origin arxiv-digest --force
-#           echo "digest_deployed=true" >> $GITHUB_OUTPUT
-#         else
-#           echo "digest_deployed=false" >> $GITHUB_OUTPUT
-#           echo "No changes to deploy in digest branch"
-#         fi
-        
-#         # main 브랜치로 전환하여 인덱스 파일들 업데이트
-#         git checkout main
-        
-#         # 인덱스 페이지 업데이트 (Python으로 직접 실행)
-#         if [ -d "digest" ]; then
-#           python -c "from exporter import update_all_indexes; import os; update_all_indexes(); print('Index pages updated successfully')"
-#         else
-#           echo "Skipping index update - digest directory not found"
-#         fi
-        
-#         # 인덱스 파일들이 존재하는 경우에만 추가
-#         if [ -f "LLM/index.md" ]; then
-#           git add LLM/index.md
-#           echo "Added LLM/index.md"
-#         fi
-        
-#         if [ -f "ALL/index.md" ]; then
-#           git add ALL/index.md  
-#           echo "Added ALL/index.md"
-#         fi
-        
-#         # 변경사항이 있는 경우에만 커밋
-#         if ! git diff --staged --quiet; then
-#           git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
-#           git push origin main
-#           echo "index_deployed=true" >> $GITHUB_OUTPUT
-#         else
-#           echo "index_deployed=false" >> $GITHUB_OUTPUT
-#           echo "No changes to deploy in main branch"
-#         fi
-        
-#         # 인덱스 배포 상태를 전역 출력으로 설정
-#         if [ -f "LLM/index.md" ] && [ -f "ALL/index.md" ]; then
-#           echo "index_files_ready=true" >> $GITHUB_OUTPUT
-#         else
-#           echo "index_files_ready=false" >> $GITHUB_OUTPUT
-#         fi
-    
-#     - name: Wait for GitHub Pages deployment
-#       if: steps.run_digest.outputs.success == 'true' && steps.deploy.outputs.digest_deployed == 'true'
-#       id: wait_pages
-#       run: |
-#         echo "Waiting for GitHub Pages deployment to complete..."
-        
-#         # GitHub Pages 배포 완료까지 최대 10분 대기
-#         MAX_WAIT=600  # 10분
-#         WAIT_TIME=0
-#         SLEEP_INTERVAL=20  # 20초마다 확인
-        
-#         while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-#           echo "Checking deployment status... (${WAIT_TIME}s elapsed)"
-          
-#           # GitHub Pages 상태 확인 (오늘 날짜의 다이제스트 파일이 실제로 배포되었는지 확인)
-#           TODAY_FILE_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/${{ steps.check_status.outputs.today }}.md"
-#           echo "Checking for file at: $TODAY_FILE_URL"
-          
-#           # HTTP 상태 코드 확인
-#           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TODAY_FILE_URL")
-#           echo "HTTP response code: $HTTP_CODE"
-          
-#           if [ "$HTTP_CODE" = "200" ]; then
-#             echo "GitHub Pages deployment completed successfully!"
-#             echo "pages_ready=true" >> $GITHUB_OUTPUT
-#             break
-#           elif [ "$HTTP_CODE" = "404" ]; then
-#             echo "File not yet available (404). Continuing to wait..."
-#           else
-#             echo "Unexpected response code: $HTTP_CODE. Continuing to wait..."
-#           fi
-          
-#           # 5분 후부터는 인덱스 페이지도 확인 (대체 확인 방법)
-#           if [ $WAIT_TIME -ge 300 ]; then
-#             INDEX_URL="https://2shin0.github.io/arxiv-ai-mailing/ALL/"
-#             INDEX_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$INDEX_URL")
-#             echo "Also checking index page: $INDEX_CODE"
-            
-#             if [ "$INDEX_CODE" = "200" ]; then
-#               # 인덱스 페이지가 업데이트되었는지 확인 (오늘 날짜 포함 여부)
-#               if curl -s "$INDEX_URL" | grep -q "${{ steps.check_status.outputs.today }}"; then
-#                 echo "Index page updated with today's content. Assuming deployment is ready."
-#                 echo "pages_ready=true" >> $GITHUB_OUTPUT
-#                 break
-#               fi
-#             fi
-#           fi
-          
-#           sleep $SLEEP_INTERVAL
-#           WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
-#         done
-        
-#         if [ $WAIT_TIME -ge $MAX_WAIT ]; then
-#           echo "Timeout waiting for GitHub Pages deployment"
-#           echo "pages_ready=false" >> $GITHUB_OUTPUT
-#         fi
-    
-#     - name: Send email digest
-#       if: steps.run_digest.outputs.success == 'true' && steps.deploy.outputs.digest_deployed == 'true' && steps.deploy.outputs.index_files_ready == 'true' && steps.wait_pages.outputs.pages_ready == 'true'
-#       id: send_email
-#       run: |
-#         echo "Sending email digest..."
-        
-#         # arxiv-digest 브랜치에서 JSON 파일을 main 브랜치로 복사
-#         echo "Copying JSON file from arxiv-digest branch..."
-#         git fetch origin arxiv-digest
-
-#         mkdir -p results
-        
-#         # 오늘 날짜의 JSON 파일을 arxiv-digest 브랜치에서 복사
-#         TODAY=$(date +'%y%m%d')
-#         JSON_FILE="results/arxiv_${TODAY}.json"
-        
-#         if git show origin/arxiv-digest:$JSON_FILE > $JSON_FILE 2>/dev/null; then
-#           echo "Successfully copied JSON file: $JSON_FILE"
-          
-#           if python send_digest.py > email.log 2>&1; then
-#             echo "email_sent=true" >> $GITHUB_OUTPUT
-#             echo "Email sent successfully"
-
-#             rm -f "$JSON_FILE"
-            
-#             # 메일 발송 성공 시 상태 파일 생성 및 커밋
-#             TODAY=$(date +'%Y-%m-%d')
-#             EMAIL_STATUS_FILE="results/${TODAY}_email_sent.flag"
-#             touch "$EMAIL_STATUS_FILE"
-#             echo "Created flag file: $EMAIL_STATUS_FILE"
-
-#             # 플래그 파일을 arxiv-digest 브랜치에 커밋하여 영속화
-#             git checkout arxiv-digest
-#             git add "$EMAIL_STATUS_FILE"
-#             git commit -m "Add email sent flag for $TODAY" || echo "Flag file already exists"
-#             git push origin arxiv-digest
-#             git checkout main
-#             echo "Flag file committed to arxiv-digest branch"
-#           else
-#             echo "email_sent=false" >> $GITHUB_OUTPUT
-#             echo "Failed to send email"
-#             echo "=== EMAIL ERROR LOG ==="
-#             cat email.log
-#             echo "======================="
-#           fi
-#         else
-#           echo "email_sent=false" >> $GITHUB_OUTPUT
-#           echo "Failed to copy JSON file from arxiv-digest branch"
-#           echo "=== EMAIL ERROR LOG ===" > email.log
-#           echo "JSON 파일을 arxiv-digest 브랜치에서 복사할 수 없습니다: $JSON_FILE" >> email.log
-#           echo "======================="
-#           cat email.log
-#         fi
-    
-#     - name: Create execution summary
-#       if: always()
-#       run: |
-#         echo "## Execution Summary" >> $GITHUB_STEP_SUMMARY
-#         echo "- **Date**: ${{ steps.check_status.outputs.today }}" >> $GITHUB_STEP_SUMMARY
-#         echo "- **Time**: $(date +'%H:%M:%S KST')" >> $GITHUB_STEP_SUMMARY
-        
-#         if [ "${{ steps.check_status.outputs.already_processed }}" == "true" ]; then
-#           echo "- **Status**: Skipped (already processed)" >> $GITHUB_STEP_SUMMARY
-#         elif [ "${{ steps.run_digest.outputs.success }}" == "true" ]; then
-#           echo "- **Status**: Success" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Papers Found**: ${{ steps.run_digest.outputs.paper_count }}" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Digest Deployed**: ${{ steps.deploy.outputs.digest_deployed }}" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Index Updated**: ${{ steps.deploy.outputs.index_deployed }}" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Pages Ready**: ${{ steps.wait_pages.outputs.pages_ready }}" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Email Sent**: ${{ steps.send_email.outputs.email_sent }}" >> $GITHUB_STEP_SUMMARY
-          
-#           if [ "${{ steps.run_digest.outputs.warning }}" == "no_papers_found" ]; then
-#             echo "- **Warning**: No papers found for today" >> $GITHUB_STEP_SUMMARY
-#             echo "- **Next Retry**: ${{ steps.run_digest.outputs.next_retry_time }} KST" >> $GITHUB_STEP_SUMMARY
-#           fi
-#         else
-#           echo "- **Status**: Failed" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Error Reason**: ${{ steps.run_digest.outputs.error_reason }}" >> $GITHUB_STEP_SUMMARY
-#           echo "- **Next Retry**: $(date -d '+1 hour' +'%H:%M KST')" >> $GITHUB_STEP_SUMMARY
-#         fi
-        
-#         # 배포 실패 시 재시도 알림
-#         if [ "${{ steps.run_digest.outputs.success }}" == "true" ] && [ "${{ steps.deploy.outputs.digest_deployed }}" != "true" ] && [ "${{ steps.deploy.outputs.index_deployed }}" != "true" ]; then
-#           echo "" >> $GITHUB_STEP_SUMMARY
-#           echo "⚠️ **Deployment Failed**: Email not sent. Will retry at next scheduled time." >> $GITHUB_STEP_SUMMARY
-#           echo "- **Retry Schedule**: Next execution at $(date -d 'tomorrow' +'%Y-%m-%d') 10:00 KST" >> $GITHUB_STEP_SUMMARY
-#         fi
-        
-#         # GitHub Pages 배포 대기 타임아웃 시 알림
-#         if [ "${{ steps.wait_pages.outputs.pages_ready }}" == "false" ]; then
-#           echo "" >> $GITHUB_STEP_SUMMARY
-#           echo "⚠️ **Pages Deployment Timeout**: Email not sent due to deployment delay." >> $GITHUB_STEP_SUMMARY
-#           echo "- **Status**: Pages may still be deploying. Check manually." >> $GITHUB_STEP_SUMMARY
-#         fi
-    
-#     - name: Upload execution log
-#       if: always()
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: execution-log-${{ steps.check_status.outputs.today }}
-#         path: execution.log
-#         retention-days: 7
-    
-#     - name: Upload email log
-#       if: always()
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: email-log-${{ steps.check_status.outputs.today }}
-#         path: email.log
-#         retention-days: 7
-    
-#     - name: Clean up credentials
-#       if: always()
-#       run: |
-#         rm -f google_credentials.json
