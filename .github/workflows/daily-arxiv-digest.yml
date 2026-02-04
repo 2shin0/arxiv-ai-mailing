@@ -216,7 +216,7 @@ jobs:
           touch "$EMAIL_STATUS_FILE"
           
           # 플래그를 arxiv-digest 브랜치에 저장 (이력이 남도록)
-          git checkout arxiv-digest
+          git checkout -f arxiv-digest
           git pull origin arxiv-digest --rebase || true
           git add "$EMAIL_STATUS_FILE"
           git commit -m "Add email sent flag for $TODAY" || true
