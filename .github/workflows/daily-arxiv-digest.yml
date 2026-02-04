@@ -136,14 +136,15 @@ jobs:
         git checkout -f arxiv-digest
         
         # 3. 백업된 최신 파일들을 다시 복사하여 덮어쓰기
-        cp -r ../temp_gen/digest . 2>/dev/null || true
+        cp -r ../temp_gen/digest/* . 2>/dev/null || true
         cp -r ../temp_gen/results . 2>/dev/null || true
         
         # 4. Git 설정 및 커밋/푸시
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        git add digest/ results/
+        git add ALL/ LLM/ results/
+        
         if ! git diff --staged --quiet; then
           git commit -m "Add arXiv digest for ${{ steps.check_status.outputs.today }} (Papers: ${{ steps.run_digest.outputs.paper_count }})"
           git push origin arxiv-digest --force
@@ -157,6 +158,7 @@ jobs:
         if ! git diff --staged --quiet; then
           git commit -m "Update index pages for ${{ steps.check_status.outputs.today }}"
           git push origin main
+          echo "index_deployed=true" >> $GITHUB_OUTPUT
         fi
         echo "index_files_ready=true" >> $GITHUB_OUTPUT
       # run: |
