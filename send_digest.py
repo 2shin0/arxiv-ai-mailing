@@ -312,7 +312,7 @@ def main():
                 # 이메일 제목 생성
                 from datetime import datetime
                 today = datetime.today().strftime('%Y-%m-%d')
-                subject = f"[arXiv AI Digest] {today} 논문 요약"
+                subject = f"[LLMxiv] 데일리 논문 리뷰"
                 
                 # 이메일 발송
                 print(f"[정보] 이메일 발송을 시작합니다...")
