@@ -110,22 +110,22 @@ def main():
     #     print("배포에 실패하여 이메일 전송을 건너뜁니다.")
     #     return # 배포 실패 시 여기서 중단
 
-    # 5. 이메일 본문 생성 및 전송
-    print("이메일 전송을 준비합니다...")
-    digest_html = make_digest(papers) # 요약/번역 기능이 포함된 이메일 본문 생성
-    email_result = send_email("[LLMxiv] 데일리 논문 리뷰", digest_html)
+    # # 5. 이메일 본문 생성 및 전송
+    # print("이메일 전송을 준비합니다...")
+    # digest_html = make_digest(papers) # 요약/번역 기능이 포함된 이메일 본문 생성
+    # email_result = send_email("[LLMxiv] 데일리 논문 리뷰", digest_html)
 
-    if email_result:
-        print("모든 처리가 완료되었습니다.")
-        # 이메일 발송 완료 후 상태 파일 생성
-        with open(email_flag_file, "w") as f:
-            f.write("Email sent successfully.")
-    else:
-        print("이메일 전송에 실패했습니다. 로그를 확인하세요.")
-        # 실패 시 다이제스트를 HTML 파일로 저장
-        with open(f"results_html/arxiv_digest_{today_str}.html", "w", encoding="utf-8") as f:
-            f.write(digest_html)
-        print(f"다이제스트가 HTML 파일로 저장되었습니다: results_html/arxiv_digest_{today_str}.html")
+    # if email_result:
+    #     print("모든 처리가 완료되었습니다.")
+    #     # 이메일 발송 완료 후 상태 파일 생성
+    #     with open(email_flag_file, "w") as f:
+    #         f.write("Email sent successfully.")
+    # else:
+    #     print("이메일 전송에 실패했습니다. 로그를 확인하세요.")
+    #     # 실패 시 다이제스트를 HTML 파일로 저장
+    #     with open(f"results_html/arxiv_digest_{today_str}.html", "w", encoding="utf-8") as f:
+    #         f.write(digest_html)
+    #     print(f"다이제스트가 HTML 파일로 저장되었습니다: results_html/arxiv_digest_{today_str}.html")
 
 if __name__ == "__main__":
     main()
