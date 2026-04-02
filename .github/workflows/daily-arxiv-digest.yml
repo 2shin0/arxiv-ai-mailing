@@ -191,7 +191,8 @@ jobs:
         echo "pages_ready=false" >> $GITHUB_OUTPUT
 
     - name: Send email digest
-      if: steps.check_status.outputs.email_already_sent == 'false' && steps.wait_pages.outputs.pages_ready == 'true'
+      # if: steps.check_status.outputs.email_already_sent == 'false' && steps.wait_pages.outputs.pages_ready == 'true'
+      if: steps.check_status.outputs.email_already_sent == 'false' && steps.deploy.outputs.index_files_ready == 'true'
       id: send_email
       run: |
         # JSON 파일을 arxiv-digest 브랜치에서 가져옴 (main에는 없을 수 있음)
