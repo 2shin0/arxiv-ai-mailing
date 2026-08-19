@@ -416,7 +416,7 @@
     {
         "title": "Traceable Trust for action-ready artificial intelligence in bioscience",
         "authors": "Huayu Xin , Yizhi Cai , Mukilan Deivarajan Suresh , Gavin Michael Farrell , Iwona Gajda , Charlie Harrison , Conor Houghton , Mato Lagator , Yang Lu , Virginia Portillo , Reyer Zwiggelaar , Sebastian Lobentanzer",
-        "abstract": "Abstract not available",
+        "abstract": "Artificial intelligence (AI) is becoming part of the working infrastructure of the biosciences. AI models can predict biomolecular structures, design proteins, rank variants, annotate images, recommend strains and optimise experimental conditions. We argue that the decision to use an AI output to guide laboratory action is a key juncture for trustworthy research and should follow a defined, reviewable process. We propose Traceable Trust as a proportionate assessment-and-design framework for this output-to-action boundary. It asks what evidence supports the output, what capability is being claimed, what agency has been delegated, what threshold authorises action, who can override it and how outcomes inform later decisions. We illustrate the framework through three case studies spanning ecosystem resources, project design and laboratory action. Together, the cases show how trust can be documented where AI outputs begin to shape scientific work.",
         "url": "https://arxiv.org/abs/2608.17997"
     },
     {
