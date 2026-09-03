@@ -1,3 +1,5 @@
+> 보다 자세한 내용은 (위키독스)[https://wikidocs.net/book/19300]를 참고해 주세요.
+
 # 📰 arXiv AI Mailing
 
 **arXiv AI Mailing**은 arXiv에서 최신 AI 논문을 자동으로 크롤링하고, 요약 및 번역하여 이메일로 전송하는 자동화 시스템입니다. 매일 새로운 AI 연구 동향을 놓치지 않고 받아볼 수 있도록 도와줍니다.
