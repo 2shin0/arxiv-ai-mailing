@@ -1,4 +1,4 @@
-> 보다 자세한 내용은 (위키독스)[https://wikidocs.net/book/19300]를 참고해 주세요.
+> 보다 자세한 내용은 [위키독스](https://wikidocs.net/book/19300)를 참고해 주세요.
 
 # 📰 arXiv AI Mailing
 
