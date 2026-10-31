@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   generate-and-send-digest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       TZ: Asia/Seoul
     
